@@ -1,12 +1,16 @@
 import * as THREE from 'three';
+
 import { CONFIG } from './config.js';
+import { Sea } from './world/Sea.js';
+import { Terrain } from './world/Terrain.js';
 
 // Classe principale : renderer, scène, caméra, boucle d'animation.
+
 export class Game {
+
   constructor(canvas) {
     this.canvas = canvas;
     this.clock = new THREE.Clock();
-    this.time = 0; // temps total écoulé (pour animer la mer)
 
     // État de la caméra de debug
     this.keys = {};
@@ -70,47 +74,8 @@ export class Game {
   }
 
   initWorld() {
-    this.createSea();
-    this.createIsland();
-    this.createTestCube();
-  }
-
-  // --- Contenu de la scène ---
-
-  createSea() {
-    const s = CONFIG.sea;
-    const geometry = new THREE.PlaneGeometry(s.size, s.size, s.segments, s.segments);
-    geometry.rotateX(-Math.PI / 2); // à plat
-
-    // On garde les positions d'origine pour animer les vagues
-    this.seaBasePositions = geometry.attributes.position.array.slice();
-
-    const material = new THREE.MeshLambertMaterial({
-      color: s.color,
-      flatShading: true, // facettes visibles = look low-poly
-    });
-    this.sea = new THREE.Mesh(geometry, material);
-    this.scene.add(this.sea);
-  }
-
-  createIsland() {
-    const i = CONFIG.island;
-    const geometry = new THREE.PlaneGeometry(i.size, i.size);
-    geometry.rotateX(-Math.PI / 2);
-    const material = new THREE.MeshLambertMaterial({ color: i.color });
-    this.island = new THREE.Mesh(geometry, material);
-    this.island.position.y = i.height;
-    this.scene.add(this.island);
-  }
-
-  createTestCube() {
-    const t = CONFIG.testCube;
-    const geometry = new THREE.BoxGeometry(t.size, t.size, t.size);
-    const material = new THREE.MeshLambertMaterial({ color: t.color });
-    this.cube = new THREE.Mesh(geometry, material);
-    // Posé sur le plan de terre
-    this.cube.position.y = CONFIG.island.height + t.size / 2;
-    this.scene.add(this.cube);
+    this.sea = new Sea(this.scene);
+    this.terrain = new Terrain(this.scene);
   }
 
   // --- Contrôles de la caméra de debug ---
@@ -175,28 +140,9 @@ export class Game {
 
   // --- Mises à jour ---
 
-  updateSea() {
-    const s = CONFIG.sea;
-    const positions = this.sea.geometry.attributes.position;
-    const base = this.seaBasePositions;
-
-    // Ondulation simple : somme de deux sinus
-    for (let i = 0; i < positions.count; i++) {
-      const x = base[i * 3];
-      const z = base[i * 3 + 2];
-      const wave =
-        Math.sin(x * s.waveFrequency + this.time * s.waveSpeed) +
-        Math.sin(z * s.waveFrequency * 1.3 + this.time * s.waveSpeed * 0.8);
-      positions.setY(i, (wave * 0.5) * s.waveHeight);
-    }
-    positions.needsUpdate = true;
-    this.sea.geometry.computeVertexNormals(); // pour l'éclairage des facettes
-  }
-
   update(delta) {
-    this.time += delta;
+    this.sea.update(delta);
     this.updateDebugCamera(delta);
-    this.updateSea();
   }
 
   // --- Boucle principale ---

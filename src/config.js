@@ -1,6 +1,7 @@
 // Tous les paramètres réglables du jeu sont ici.
 
 export const CONFIG = {
+
   // --- Rendu ---
   render: {
     maxPixelRatio: 1,        // limité à 1 pour le rendu rétro pixelisé
@@ -10,16 +11,16 @@ export const CONFIG = {
   // --- Ciel et brouillard ---
   sky: {
     color: 0x87ceeb,         // bleu clair
-    fogNear: 40,             // distance où le brouillard commence
-    fogFar: 250,             // distance où tout est noyé dans le brouillard
+    fogNear: 200,            // distance où le brouillard commence
+    fogFar: 2500,            // distance où tout est noyé dans le brouillard
   },
 
   // --- Caméra ---
   camera: {
     fov: 70,
     near: 0.1,
-    far: 500,
-    startPosition: { x: 0, y: 6, z: 20 },
+    far: 5000,
+    startPosition: { x: 0, y: 300, z: 900 }, // vue d'ensemble sur l'île
   },
 
   // --- Caméra libre de debug ---
@@ -33,23 +34,27 @@ export const CONFIG = {
   // --- Mer ---
   sea: {
     color: 0x1e6fa8,
-    size: 2000,              // taille du plan (mètres)
+    size: 4000,              // taille du plan (mètres) — doit dépasser le terrain
     segments: 40,            // subdivisions (peu = look low-poly)
     waveHeight: 0.25,        // amplitude des vagues
     waveSpeed: 1.2,          // vitesse de l'ondulation
     waveFrequency: 0.15,     // densité des vagues
   },
 
-  // --- Île de test ---
-  island: {
-    color: 0xc2b280,         // sable
-    size: 40,                // plan carré de 40 m
-    height: 0.5,             // altitude du plan au-dessus du niveau de la mer
-  },
-
-  // --- Cube de test ---
-  testCube: {
-    color: 0xff0000,
-    size: 2,
+  // --- Terrain (île des Embiez, données RGE ALTI 5 m IGN) ---
+  // Les données (src/world/data/embiez.json) sont générées par
+  // scripts/build-embiez-data.mjs à partir des dalles ASC de resources/rgealti/
+  terrain: {
+    size: 2000,              // plan carré centré sur l'île (mètres)
+    segments: 200,           // subdivisions du mesh (résolution 10 m)
+    beachHeight: 1.5,        // altitude max considérée comme plage (mètres)
+    rockHeight: 15,          // altitude à partir de laquelle c'est de la roche
+    waterDepth: 6,           // profondeur des fonds marins hors données (mètres)
+    colors: {
+      sand: 0xc2b280,        // plage
+      grass: 0x5d8a4a,       // végétation basse
+      rock: 0x8a8a8a,        // hauteurs
+      seabed: 0x3a6a8a,      // fonds marins
+    },
   },
 };

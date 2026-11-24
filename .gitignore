@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Ressources géo téléchargées (RGE ALTI IGN), trop lourdes pour git
+resources/
