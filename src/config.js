@@ -41,6 +41,33 @@ export const CONFIG = {
     waveFrequency: 0.15,     // densité des vagues
   },
 
+  // --- Joueur (personnage à pied, 3e personne) ---
+  player: {
+    walkSpeed: 4,            // mètres par seconde
+    runSpeed: 8,             // avec Shift
+    turnSpeed: 12,           // vitesse de rotation du perso (rad/s)
+    gravity: 25,             // mètres par seconde carrée
+    jumpSpeed: 9,            // impulsion du saut (m/s)
+    spawn: { x: -220, z: 120 }, // plage au sud-ouest de l'île (y calé sur le terrain)
+    colors: {
+      body: 0x3a6fd8,
+      head: 0xd8a880,
+      legs: 0x2a2a2a,
+      arms: 0x3a6fd8,
+    },
+  },
+
+  // --- Caméra du joueur (3e personne, orbite autour du perso) ---
+  playerCamera: {
+    distance: 6,             // distance derrière le joueur (mètres)
+    height: 1.6,             // hauteur du point visé au-dessus des pieds
+    lerpSpeed: 10,           // vitesse du suivi adouci
+    mouseSensitivity: 0.0025, // radians par pixel
+    keyTurnSpeed: 2.5,       // radians par seconde (flèches)
+    minPitch: -0.2,
+    maxPitch: 1.2,
+  },
+
   // --- Terrain (île des Embiez, données RGE ALTI 5 m IGN) ---
   // Les données (src/world/data/embiez.json) sont générées par
   // scripts/build-embiez-data.mjs à partir des dalles ASC de resources/rgealti/

@@ -3,6 +3,8 @@ import * as THREE from 'three';
 import { CONFIG } from './config.js';
 import { Sea } from './world/Sea.js';
 import { Terrain } from './world/Terrain.js';
+import { Player } from './player/Player.js';
+import { PlayerCamera } from './player/PlayerCamera.js';
 import { DebugCamera } from './utils/DebugCamera.js';
 
 // Classe principale : renderer, scène, caméra, boucle d'animation.
@@ -17,7 +19,17 @@ export class Game {
     this.initScene();
     this.initCamera();
     this.initWorld();
-    this.debugCamera = new DebugCamera(canvas, this.camera);
+
+    // Mode 'player' (3e personne) par défaut, F8 = bascule caméra de debug
+    this.mode = 'player';
+    this.debugCamera.enabled = false;
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'F8') {
+        this.mode = this.mode === 'player' ? 'debug' : 'player';
+        this.playerCamera.enabled = this.mode === 'player';
+        this.debugCamera.enabled = this.mode === 'debug';
+      }
+    });
 
     window.addEventListener('resize', () => this.onResize());
   }
@@ -72,13 +84,21 @@ export class Game {
   initWorld() {
     this.sea = new Sea(this.scene);
     this.terrain = new Terrain(this.scene);
+    this.player = new Player(this.scene, this.terrain);
+    this.playerCamera = new PlayerCamera(this.canvas, this.camera, this.player, this.terrain);
+    this.debugCamera = new DebugCamera(this.canvas, this.camera);
   }
 
   // --- Mises à jour ---
 
   update(delta) {
     this.sea.update(delta);
-    this.debugCamera.update(delta);
+    if (this.mode === 'debug') {
+      this.debugCamera.update(delta);
+    } else {
+      this.player.update(delta, this.playerCamera.yaw);
+      this.playerCamera.update(delta);
+    }
   }
 
   // --- Boucle principale ---

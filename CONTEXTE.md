@@ -12,7 +12,7 @@ Projet solo, développé en vibecoding.
 - Physique arcade maison (pas de moteur physique pour l'instant)
 
 ## Contenu prévu
-- Personnage à pied (3e personne)
+- [x] Personnage à pied (3e personne)
 - 1 voiturette électrique
 - 1 voilier, 1 bateau à moteur, 1 jetski
 - Quelques touristes PNJ
@@ -34,6 +34,7 @@ src/world/, src/player/, src/vehicles/, src/npc/, src/utils/
 ## État d'avancement
 - [x] Étape 1 : scène Three.js de base (mer, ciel, caméra libre, cube de test)
 - [x] Étape 2 : terrain RÉEL de l'île des Embiez (données RGE ALTI 5 m IGN, voir section Données géo)
+- [x] Étape 3 : personnage à pied en 3e personne (déplacement, saut, caméra orbitale)
 
 ## Décisions techniques prises
 
@@ -87,12 +88,23 @@ src/world/, src/player/, src/vehicles/, src/npc/, src/utils/
 - La mer (plan à y = 0) coupe le terrain : fonds marins à -6 m au-delà du rivage
 
 ### Caméra
-- Caméra de debug libre (temporaire) : ZQSD + souris (pointer lock au clic)
-  ou flèches, Espace/Ctrl = monter/descendre, Shift = rapide
+- Deux caméras, bascule avec F8 : mode 'player' (défaut) ou 'debug'
+- Caméra joueur (3e personne, src/player/PlayerCamera.js) : orbite autour
+  du perso (souris en pointer lock ou flèches), suivi adouci par lerp,
+  ne traverse pas le sol ; Game passe son yaw au joueur pour un
+  déplacement relatif à la caméra
+- Caméra de debug libre (src/utils/DebugCamera.js) : ZQSD + souris
+  (pointer lock au clic) ou flèches, Espace/Ctrl = monter/descendre,
+  Shift = rapide ; a un flag `enabled` pour coexister avec la caméra joueur
 - FOV 70, near 0.1, far 5000, rotation order 'YXZ'
 - Position de départ : (0, 300, 900) — vue d'ensemble sur l'île
-- La caméra de debug est extraite dans src/utils/DebugCamera.js
-  (Game.js lui passe la caméra et appelle debugCamera.update(delta))
+
+### Joueur (3e personne)
+- src/player/Player.js : groupe de boîtes low-poly (jambes/bras animés
+  à la marche), ZQSD relatif caméra, Shift = courir, Espace = sauter
+- Physique arcade maison : gravité, saut, sol = terrain.heightAt(x, z),
+  limites du monde = bords du terrain ; le spawn est calé sur le terrain
+- Clavier centralisé dans src/utils/Input.js (event.code uniquement)
 
 ### Placeholders remplacés (étape 2)
 - L'île de test (plan 40 x 40 m) et le cube rouge sont supprimés,
@@ -112,7 +124,10 @@ src/world/, src/player/, src/vehicles/, src/npc/, src/utils/
 - scripts/build-embiez-data.mjs : régénère src/world/data/embiez.js depuis
   les dalles ASC de resources/rgealti/ (resources/ est gitignoré)
 - src/utils/DebugCamera.js : caméra libre de debug (ZQSD + souris/flèches)
-- Dossiers prévus mais pas encore créés : player/, vehicles/, npc/
+- src/utils/Input.js : clavier centralisé (event.code)
+- src/player/Player.js : personnage à pied (boîtes low-poly, physique arcade)
+- src/player/PlayerCamera.js : caméra 3e personne (orbite + lerp)
+- Dossiers prévus mais pas encore créés : vehicles/, npc/
 
 ### Règle de configuration
 - Tout paramètre réglable va dans CONFIG (src/config.js), regroupé par

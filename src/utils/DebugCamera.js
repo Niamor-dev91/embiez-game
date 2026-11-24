@@ -14,6 +14,7 @@ export class DebugCamera {
     this.keys = {};
     this.yaw = 0;   // rotation horizontale
     this.pitch = 0; // rotation verticale
+    this.enabled = true; // false quand le mode joueur est actif
     this.attach();
   }
 
@@ -27,6 +28,7 @@ export class DebugCamera {
     });
 
     document.addEventListener('mousemove', (e) => {
+      if (!this.enabled) return;
       if (document.pointerLockElement !== this.canvas) return;
       this.yaw -= e.movementX * CONFIG.debugCamera.mouseSensitivity;
       this.pitch -= e.movementY * CONFIG.debugCamera.mouseSensitivity;
@@ -41,6 +43,7 @@ export class DebugCamera {
   }
 
   update(delta) {
+    if (!this.enabled) return;
     const d = CONFIG.debugCamera;
     const cam = this.camera;
 
