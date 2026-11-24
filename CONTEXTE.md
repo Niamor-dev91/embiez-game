@@ -91,8 +91,8 @@ src/world/, src/player/, src/vehicles/, src/npc/, src/utils/
   ou flèches, Espace/Ctrl = monter/descendre, Shift = rapide
 - FOV 70, near 0.1, far 5000, rotation order 'YXZ'
 - Position de départ : (0, 300, 900) — vue d'ensemble sur l'île
-- La caméra de debug est encore dans Game.js, à extraire dans
-  src/utils/DebugCamera.js avant d'ajouter le personnage
+- La caméra de debug est extraite dans src/utils/DebugCamera.js
+  (Game.js lui passe la caméra et appelle debugCamera.update(delta))
 
 ### Placeholders remplacés (étape 2)
 - L'île de test (plan 40 x 40 m) et le cube rouge sont supprimés,
@@ -101,8 +101,8 @@ src/world/, src/player/, src/vehicles/, src/npc/, src/utils/
 ### Fichiers existants
 - index.html : canvas #game-canvas plein écran + div #hud (pointer-events: none)
 - src/main.js : point d'entrée, instancie Game et le lance
-- src/Game.js : renderer, scène, caméra, caméra de debug,
-  boucle d'animation, resize (délègue le monde à world/)
+- src/Game.js : renderer, scène, caméra, boucle d'animation, resize
+  (délègue le monde à world/ et la caméra de debug à utils/)
 - src/config.js : objet CONFIG exporté (render, sky, camera, debugCamera,
   sea, terrain)
 - src/world/Sea.js : mer animée (plan ondulé CPU, somme de 2 sinus)
@@ -111,8 +111,8 @@ src/world/, src/player/, src/vehicles/, src/npc/, src/utils/
 - src/world/data/embiez.js : données du terrain (généré, 208 Ko, commité)
 - scripts/build-embiez-data.mjs : régénère src/world/data/embiez.js depuis
   les dalles ASC de resources/rgealti/ (resources/ est gitignoré)
-- Dossiers prévus mais pas encore créés : player/, vehicles/,
-  npc/, utils/
+- src/utils/DebugCamera.js : caméra libre de debug (ZQSD + souris/flèches)
+- Dossiers prévus mais pas encore créés : player/, vehicles/, npc/
 
 ### Règle de configuration
 - Tout paramètre réglable va dans CONFIG (src/config.js), regroupé par
