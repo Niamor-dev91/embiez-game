@@ -58,6 +58,18 @@ export function pickRoads(count, minSpacing = 100, minLength = 50) {
   return chosen;
 }
 
+// Chemins les plus proches du centre de l'île (le village), hors `taken` :
+// pour placer les policiers là où il y a du monde.
+export function pickPoliceRoads(count, taken) {
+  const takenSet = new Set(taken);
+  return osmData.roads
+    .filter((r) => PATH_KINDS.includes(r.kind) && roadLength(r) >= 50 && !takenSet.has(r))
+    .map((r) => ({ r, d: Math.hypot(...centroidOf(r.points)) }))
+    .sort((a, b) => a.d - b.d)
+    .slice(0, count)
+    .map((o) => o.r);
+}
+
 export class Npc {
 
   constructor(scene, terrain, colliders, road, seed = 0, isPolice = false) {
@@ -94,7 +106,8 @@ export class Npc {
     this.dir = rand() < 0.5 ? 1 : -1;
     if (this.dir === -1 && this.segIndex === 0) this.segIndex = 1; // éviter points[-1]
 
-    this.humanoid = createHumanoid(CONFIG.npc.colors);
+    // Le policier a un look bleu foncé distinct
+    this.humanoid = createHumanoid(isPolice ? CONFIG.npc.policeColors : CONFIG.npc.colors);
     this.group = this.humanoid.group;
     if (isPolice) addGun(this.humanoid, CONFIG.combat.gunColor); // pistolet visible
     const a = this.road.points[this.segIndex];

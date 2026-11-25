@@ -74,7 +74,7 @@ export const CONFIG = {
     playerHp: 10,            // points de vie du joueur
     npcHp: 3,                // points de vie d'un PNJ
     policeHp: 5,             // points de vie du PNJ policier
-    policeCount: 1,          // nombre de policiers
+    policeCount: 3,          // nombre de policiers (placés près du village)
     damagePerShot: 1,        // dégâts d'une balle
     playerFireRange: 120,    // portée du tir joueur (m)
     playerFireCooldown: 0.25, // secondes entre deux tirs du joueur
@@ -91,7 +91,7 @@ export const CONFIG = {
 
   // --- PNJ (touristes qui marchent sur les routes OSM) ---
   npc: {
-    count: 20,               // nombre de PNJ (chacun sur un chemin différent)
+    count: 40,               // nombre de PNJ (chacun sur un chemin différent)
     walkSpeed: 2,            // mètres par seconde
     radius: 0.35,            // rayon de collision
     colors: {
@@ -99,6 +99,12 @@ export const CONFIG = {
       head: 0xd8a880,
       legs: 0x3a3a3a,
       arms: 0xd86a3a,
+    },
+    policeColors: {          // look du policier : bleu foncé
+      body: 0x1a2a6a,
+      head: 0xd8a880,
+      legs: 0x14142a,
+      arms: 0x1a2a6a,
     },
   },
 

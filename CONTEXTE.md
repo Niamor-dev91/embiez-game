@@ -149,7 +149,7 @@ src/world/, src/player/, src/vehicles/, src/npc/, src/utils/
 - src/utils/random.js : PRNG seeded (mulberry32), partagé végétation/PNJ
 - Mesh humanoïde partagé avec le joueur : src/utils/Humanoid.js
   (createHumanoid + setWalkAnimation)
-- Game instancie CONFIG.npc.count PNJ (20 par défaut), chacun sur un chemin
+- Game instancie CONFIG.npc.count PNJ (40 par défaut), chacun sur un chemin
   différent avec un départ aléatoire ; update dans les deux modes
   (player/debug), avec le joueur passé en paramètre : le PNJ est repoussé
   si le joueur le percute
@@ -161,7 +161,9 @@ src/world/, src/player/, src/vehicles/, src/npc/, src/utils/
   src/utils/Humanoid.js), tir au clic souris ou F avec cooldown
 - PNJ : 3 PV ; touché -> state 'flee' (fuit le joueur à fleeSpeed, se calme
   à fleeDistance) ; à 0 PV -> allongé au sol (state 'dead')
-- PNJ policier (combat.policeCount = 1) : 5 PV, pistolet visible ; alerté
+- PNJ policier (combat.policeCount = 3, look bleu foncé npc.policeColors,
+  placés via pickPoliceRoads sur les chemins les plus proches du centre =
+  le village) : 5 PV, pistolet visible ; alerté
   quand le joueur tire sur un PNJ -> poursuit le joueur jusqu'à
   policeStopDistance puis tire (policeRange, policeHitChance,
   policeFireInterval) -> joueur -1 PV
@@ -217,7 +219,8 @@ src/world/, src/player/, src/vehicles/, src/npc/, src/utils/
 - src/utils/Humanoid.js : mesh humanoïde + pistolet (addGun)
 - src/player/Player.js : personnage à pied (physique arcade)
 - src/player/PlayerCamera.js : caméra 3e personne (orbite + lerp)
-- src/npc/Npc.js : PNJ qui marche sur un chemin OSM (20 PNJ répartis sur l'île)
+- src/npc/Npc.js : PNJ qui marche sur un chemin OSM (40 PNJ répartis +
+  policiers près du village via pickPoliceRoads)
 - src/utils/random.js : PRNG seeded partagé (végétation, PNJ)
 - src/utils/Humanoid.js : mesh humanoïde low-poly partagé (joueur + PNJ)
 - Dossier prévu mais pas encore créé : vehicles/

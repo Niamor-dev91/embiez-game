@@ -8,7 +8,7 @@ import { Buildings } from './world/Buildings.js';
 import { Vegetation } from './world/Vegetation.js';
 import { Player } from './player/Player.js';
 import { PlayerCamera } from './player/PlayerCamera.js';
-import { Npc, pickRoads } from './npc/Npc.js';
+import { Npc, pickRoads, pickPoliceRoads } from './npc/Npc.js';
 import { DebugCamera } from './utils/DebugCamera.js';
 import { Input } from './utils/Input.js';
 
@@ -100,15 +100,17 @@ export class Game {
     this.debugCamera = new DebugCamera(this.canvas, this.camera);
 
     // PNJ : répartis sur des chemins différents de l'île, départ aléatoire
-    // + policiers (avec pistolet)
-    const roads = pickRoads(CONFIG.npc.count + CONFIG.combat.policeCount);
+    // + policiers (pistolet, look bleu) placés sur les chemins les plus
+    // proches du centre de l'île (le village)
+    const roads = pickRoads(CONFIG.npc.count);
+    const policeRoads = pickPoliceRoads(CONFIG.combat.policeCount, roads);
     this.npcs = [];
     for (let i = 0; i < CONFIG.npc.count; i++) {
       this.npcs.push(new Npc(this.scene, this.terrain, this.buildings.colliders, roads[i], i, false));
     }
     for (let i = 0; i < CONFIG.combat.policeCount; i++) {
       this.npcs.push(
-        new Npc(this.scene, this.terrain, this.buildings.colliders, roads[CONFIG.npc.count + i], 100 + i, true)
+        new Npc(this.scene, this.terrain, this.buildings.colliders, policeRoads[i], 100 + i, true)
       );
     }
   }
