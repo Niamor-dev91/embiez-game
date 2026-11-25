@@ -12,6 +12,7 @@ export class Buildings {
     this.scene = scene;
     this.terrain = terrain;
     this.group = new THREE.Group();
+    this.colliders = []; // boîtes de collision pour le joueur/PNJ/véhicules
     this.createBuildings();
     this.createRocks();
     this.scene.add(this.group);
@@ -31,6 +32,7 @@ export class Buildings {
       const mesh = new THREE.Mesh(geo, [wallMat, wallMat, roofMat, wallMat, wallMat, wallMat]);
       mesh.position.set(b.cx, y + b.height / 2, b.cz);
       this.group.add(mesh);
+      this.colliders.push({ cx: b.cx, cz: b.cz, w: b.w, d: b.d });
       count++;
     }
     console.log('[Buildings] bâtiments posés :', count, '/', osmData.buildings.length);

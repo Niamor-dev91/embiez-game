@@ -90,7 +90,7 @@ export class Game {
     this.roads = new Roads(this.scene, this.terrain);
     this.buildings = new Buildings(this.scene, this.terrain);
     this.vegetation = new Vegetation(this.scene, this.terrain);
-    this.player = new Player(this.scene, this.terrain);
+    this.player = new Player(this.scene, this.terrain, this.buildings.colliders);
     this.playerCamera = new PlayerCamera(this.canvas, this.camera, this.player, this.terrain);
     this.debugCamera = new DebugCamera(this.canvas, this.camera);
   }

@@ -140,6 +140,15 @@ src/world/, src/player/, src/vehicles/, src/npc/, src/utils/
 - FOV 70, near 0.1, far 5000, rotation order 'YXZ'
 - Position de départ : (0, 300, 900) — vue d'ensemble sur l'île
 
+### Collisions
+- src/utils/Collisions.js : cercle (position + rayon) contre les AABB des
+  bâtiments (buildColliders depuis Buildings.colliders ;
+  resolveCollisions pousse sur l'axe de pénétration minimale, 2 passes)
+- Le joueur a un rayon (player.radius = 0.35 m) ; le module est réutilisable
+  tel quel pour les futurs PNJ et véhicules
+- Le sol reste géré par terrain.heightAt (pas de collision verticale
+  avec les bâtiments)
+
 ### Joueur (3e personne)
 - src/player/Player.js : groupe de boîtes low-poly (jambes/bras animés
   à la marche), ZQSD relatif caméra, Shift = courir, Espace = sauter
@@ -173,6 +182,7 @@ src/world/, src/player/, src/vehicles/, src/npc/, src/utils/
   resources/export.geojson
 - src/utils/DebugCamera.js : caméra libre de debug (ZQSD + souris/flèches)
 - src/utils/Input.js : clavier centralisé (event.code)
+- src/utils/Collisions.js : collisions cercle vs AABB (bâtiments)
 - src/player/Player.js : personnage à pied (boîtes low-poly, physique arcade)
 - src/player/PlayerCamera.js : caméra 3e personne (orbite + lerp)
 - Dossiers prévus mais pas encore créés : vehicles/, npc/

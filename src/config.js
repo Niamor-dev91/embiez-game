@@ -43,6 +43,7 @@ export const CONFIG = {
 
   // --- Joueur (personnage à pied, 3e personne) ---
   player: {
+    radius: 0.35,            // rayon de collision du perso (mètres)
     walkSpeed: 4,            // mètres par seconde
     runSpeed: 8,             // avec Shift
     turnSpeed: 12,           // vitesse de rotation du perso (rad/s)

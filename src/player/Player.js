@@ -2,6 +2,7 @@ import * as THREE from 'three';
 
 import { CONFIG } from '../config.js';
 import { Input } from '../utils/Input.js';
+import { resolveCollisions } from '../utils/Collisions.js';
 
 // Personnage à pied (3e personne) : un groupe de boîtes low-poly.
 // Déplacement au clavier (ZQSD relatif à la caméra), Shift = courir,
@@ -9,9 +10,10 @@ import { Input } from '../utils/Input.js';
 
 export class Player {
 
-  constructor(scene, terrain) {
+  constructor(scene, terrain, colliders = []) {
     this.scene = scene;
     this.terrain = terrain;
+    this.colliders = colliders; // boîtes des bâtiments (src/utils/Collisions.js)
     this.vy = 0;
     this.onGround = true;
     this.walkPhase = 0;
@@ -95,6 +97,9 @@ export class Player {
     const half = this.terrain.size / 2 - 1;
     pos.x = Math.max(-half, Math.min(half, pos.x));
     pos.z = Math.max(-half, Math.min(half, pos.z));
+
+    // --- Collisions avec les bâtiments ---
+    resolveCollisions(pos, p.radius, this.colliders);
 
     // --- Verticale : saut + gravité + sol du terrain ---
     if (Input.isDown('Space') && this.onGround) this.vy = p.jumpSpeed;
