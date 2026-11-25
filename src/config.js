@@ -69,6 +69,19 @@ export const CONFIG = {
     maxPitch: 1.2,
   },
 
+  // --- PNJ (touristes qui marchent sur les routes OSM) ---
+  npc: {
+    count: 1,                // nombre de PNJ (chacun sur une route différente)
+    walkSpeed: 2,            // mètres par seconde
+    radius: 0.35,            // rayon de collision
+    colors: {
+      body: 0xd86a3a,
+      head: 0xd8a880,
+      legs: 0x3a3a3a,
+      arms: 0xd86a3a,
+    },
+  },
+
   // --- Décor (données OpenStreetMap, voir scripts/build-embiez-osm.mjs) ---
   props: {
     roadWidth: { secondary: 6, residential: 5, unclassified: 5, service: 3.5, pedestrian: 4, footway: 1.8, path: 1.8, steps: 1.8 },

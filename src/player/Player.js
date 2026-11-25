@@ -1,8 +1,7 @@
-import * as THREE from 'three';
-
 import { CONFIG } from '../config.js';
 import { Input } from '../utils/Input.js';
 import { resolveCollisions } from '../utils/Collisions.js';
+import { createHumanoid, setWalkAnimation } from '../utils/Humanoid.js';
 
 // Personnage à pied (3e personne) : un groupe de boîtes low-poly.
 // Déplacement au clavier (ZQSD relatif à la caméra), Shift = courir,
@@ -27,25 +26,9 @@ export class Player {
   }
 
   createMesh() {
-    const p = CONFIG.player;
-    const mat = (color) => new THREE.MeshLambertMaterial({ color });
-    const box = (w, h, d, color, x, y, z) => {
-      const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(color));
-      m.position.set(x, y, z);
-      return m;
-    };
-
-    this.group = new THREE.Group();
-    // Jambes (pivotent à la marche)
-    this.legL = box(0.18, 0.8, 0.2, p.colors.legs, -0.12, 0.4, 0);
-    this.legR = box(0.18, 0.8, 0.2, p.colors.legs, 0.12, 0.4, 0);
-    // Bras (pivotent à la marche)
-    this.armL = box(0.12, 0.65, 0.15, p.colors.arms, -0.32, 1.15, 0);
-    this.armR = box(0.12, 0.65, 0.15, p.colors.arms, 0.32, 1.15, 0);
-    // Corps et tête
-    this.group.add(box(0.5, 0.7, 0.3, p.colors.body, 0, 1.15, 0));
-    this.group.add(box(0.3, 0.3, 0.3, p.colors.head, 0, 1.65, 0));
-    this.group.add(this.legL, this.legR, this.armL, this.armR);
+    // Mesh humanoïde partagé avec les PNJ (src/utils/Humanoid.js)
+    this.humanoid = createHumanoid(CONFIG.player.colors);
+    this.group = this.humanoid.group;
   }
 
   update(delta, cameraYaw) {
@@ -88,10 +71,7 @@ export class Player {
       this.walkPhase = 0;
     }
     const swing = moving ? 1 : 0;
-    this.legL.rotation.x = Math.sin(this.walkPhase) * 0.6 * swing;
-    this.legR.rotation.x = -Math.sin(this.walkPhase) * 0.6 * swing;
-    this.armL.rotation.x = -Math.sin(this.walkPhase) * 0.5 * swing;
-    this.armR.rotation.x = Math.sin(this.walkPhase) * 0.5 * swing;
+    setWalkAnimation(this.humanoid, this.walkPhase, swing);
 
     // --- Limites du monde ---
     const half = this.terrain.size / 2 - 1;

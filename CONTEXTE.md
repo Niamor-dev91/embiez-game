@@ -39,7 +39,7 @@ src/world/, src/player/, src/vehicles/, src/npc/, src/utils/
 - [x] Étape 4 : décor réel de l'île depuis OpenStreetMap (211 routes, 164 bâtiments, 17 pontons, 3 forêts, 11 rochers, 26 surfaces)
 - [ ] Étape 5 : voiturette électrique (entrer/sortir, conduite arcade)
 - [ ] Étape 6 : voilier, bateau à moteur, jetski
-- [ ] Étape 7 : PNJ touristes
+- [~] Étape 7 : PNJ touristes (1 PNJ qui marche sur une route OSM pour l'instant)
 
 ## Décisions techniques prises
 
@@ -140,6 +140,15 @@ src/world/, src/player/, src/vehicles/, src/npc/, src/utils/
 - FOV 70, near 0.1, far 5000, rotation order 'YXZ'
 - Position de départ : (0, 300, 900) — vue d'ensemble sur l'île
 
+### PNJ
+- src/npc/Npc.js : un PNJ marche le long d'une route OSM (pickRoad choisit
+  la index-ième plus longue route carrossable), demi-tour aux extrémités,
+  posé sur le terrain (heightAt), bloqué par les bâtiments (resolveCollisions)
+- Mesh humanoïde partagé avec le joueur : src/utils/Humanoid.js
+  (createHumanoid + setWalkAnimation)
+- Game instancie CONFIG.npc.count PNJ (1 par défaut), chacun sur une route
+  différente ; update dans les deux modes (player/debug)
+
 ### Collisions
 - src/utils/Collisions.js : cercle (position + rayon) contre les AABB des
   bâtiments (buildColliders depuis Buildings.colliders ;
@@ -183,9 +192,11 @@ src/world/, src/player/, src/vehicles/, src/npc/, src/utils/
 - src/utils/DebugCamera.js : caméra libre de debug (ZQSD + souris/flèches)
 - src/utils/Input.js : clavier centralisé (event.code)
 - src/utils/Collisions.js : collisions cercle vs AABB (bâtiments)
-- src/player/Player.js : personnage à pied (boîtes low-poly, physique arcade)
+- src/player/Player.js : personnage à pied (physique arcade)
 - src/player/PlayerCamera.js : caméra 3e personne (orbite + lerp)
-- Dossiers prévus mais pas encore créés : vehicles/, npc/
+- src/npc/Npc.js : PNJ qui marche sur une route OSM (demi-tour aux bouts)
+- src/utils/Humanoid.js : mesh humanoïde low-poly partagé (joueur + PNJ)
+- Dossier prévu mais pas encore créé : vehicles/
 
 ### Règle de configuration
 - Tout paramètre réglable va dans CONFIG (src/config.js), regroupé par
