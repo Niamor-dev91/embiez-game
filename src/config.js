@@ -68,6 +68,23 @@ export const CONFIG = {
     maxPitch: 1.2,
   },
 
+  // --- Décor (données OpenStreetMap, voir scripts/build-embiez-osm.mjs) ---
+  props: {
+    roadWidth: { secondary: 6, residential: 5, unclassified: 5, service: 3.5, pedestrian: 4, footway: 1.8, path: 1.8, steps: 1.8 },
+    roadColor: 0x4a4a4a,       // routes goudronnées
+    pathColor: 0x9a8f7a,       // petites allées
+    pierColor: 0x8a6a4a,       // pontons en bois
+    pierWidth: 3,
+    buildingColors: { default: 0xd8d0c0, church: 0xf0ede0, hotel: 0xcbb890, retail: 0xb0b0b0 },
+    roofColor: 0x8a4a3a,       // toit en tuiles
+    rockColor: 0x8a8a8a,
+    surfaceColors: { default: 0x777777, pitch: 0x4a7c3a, parking: 0x666666, swimming_pool: 0x3aa0c8, beach: 0xc2b280, marina: 0x666666 },
+    treeDensity: 1 / 120,      // pins par m² dans les forêts OSM
+    treeMax: 500,              // plafond de pins procéduraux
+    trunkColor: 0x6a4a2a,
+    pineColor: 0x2d5a2d,       // vert pin
+  },
+
   // --- Terrain (île des Embiez, données RGE ALTI 5 m IGN) ---
   // Les données (src/world/data/embiez.json) sont générées par
   // scripts/build-embiez-data.mjs à partir des dalles ASC de resources/rgealti/

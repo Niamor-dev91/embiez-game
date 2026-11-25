@@ -11,13 +11,15 @@ import { readFileSync, readdirSync, writeFileSync, mkdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
+import { ISLE, isleOrigin } from './geo.js';
+
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const RGEALTI_DIR = join(root, 'resources', 'rgealti');
 const OUT_FILE = join(root, 'src', 'world', 'data', 'embiez.js');
 
-// Centre de l'île des Embiez (donné en WGS84, converti en LAMB93 ci-dessous)
-const ISLE_LAT = 43.074889101689216;
-const ISLE_LON = 5.782911398742724;
+// Centre de l'île des Embiez (WGS84), voir scripts/geo.js
+const ISLE_LAT = ISLE.lat;
+const ISLE_LON = ISLE.lon;
 
 // Fenêtre extraite autour du centre de l'île (mètres)
 const WINDOW_SIZE = 2000;
@@ -35,33 +37,6 @@ const WATER_DEPTH = 6;     // profondeur max des fonds marins (m)
 // sous LAND_LEVEL est de l'eau, le reste est de la terre.
 const LAND_LEVEL = 0.5;
 const COAST_LEVEL = 0.0; // seuil d'affichage terre/mer dans le jeu
-
-// --- Conversion WGS84 -> LAMB93 (formules officielles IGN, ellipsoïde GRS80) ---
-
-function lamb93(latDeg, lonDeg) {
-  const a = 6378137.0;
-  const f = 1 / 298.257222101;
-  const e2 = 2 * f - f * f;
-  const e = Math.sqrt(e2);
-  const lon0 = 3 * Math.PI / 180;
-  const lat0 = 46.5 * Math.PI / 180;
-  const lat1 = 44 * Math.PI / 180;
-  const lat2 = 49 * Math.PI / 180;
-  const X0 = 700000;
-  const Y0 = 6600000;
-  const m = (p) => Math.cos(p) / Math.sqrt(1 - e2 * Math.sin(p) ** 2);
-  const t = (p) =>
-    Math.tan(Math.PI / 4 - p / 2) /
-    Math.pow((1 - e * Math.sin(p)) / (1 + e * Math.sin(p)), e / 2);
-  const n = Math.log(m(lat1) / m(lat2)) / Math.log(t(lat1) / t(lat2));
-  const F = m(lat1) / (n * Math.pow(t(lat1), n));
-  const rho0 = a * F * Math.pow(t(lat0), n);
-  const p = latDeg * Math.PI / 180;
-  const l = lonDeg * Math.PI / 180;
-  const rho = a * F * Math.pow(t(p), n);
-  const th = n * (l - lon0);
-  return { x: X0 + rho * Math.sin(th), y: Y0 + rho0 - rho * Math.cos(th) };
-}
 
 // --- Lecture d'une dalle ASC ---
 
@@ -95,7 +70,7 @@ function readAsc(file) {
 
 // --- Assemblage de la fenêtre centrée sur l'île ---
 
-const center = lamb93(ISLE_LAT, ISLE_LON);
+const center = isleOrigin();
 const xMin = center.x - WINDOW_SIZE / 2;
 const xMax = center.x + WINDOW_SIZE / 2;
 const yMin = center.y - WINDOW_SIZE / 2;

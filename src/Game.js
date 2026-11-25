@@ -3,6 +3,9 @@ import * as THREE from 'three';
 import { CONFIG } from './config.js';
 import { Sea } from './world/Sea.js';
 import { Terrain } from './world/Terrain.js';
+import { Roads } from './world/Roads.js';
+import { Buildings } from './world/Buildings.js';
+import { Vegetation } from './world/Vegetation.js';
 import { Player } from './player/Player.js';
 import { PlayerCamera } from './player/PlayerCamera.js';
 import { DebugCamera } from './utils/DebugCamera.js';
@@ -84,6 +87,9 @@ export class Game {
   initWorld() {
     this.sea = new Sea(this.scene);
     this.terrain = new Terrain(this.scene);
+    this.roads = new Roads(this.scene, this.terrain);
+    this.buildings = new Buildings(this.scene, this.terrain);
+    this.vegetation = new Vegetation(this.scene, this.terrain);
     this.player = new Player(this.scene, this.terrain);
     this.playerCamera = new PlayerCamera(this.canvas, this.camera, this.player, this.terrain);
     this.debugCamera = new DebugCamera(this.canvas, this.camera);

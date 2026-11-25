@@ -13,6 +13,7 @@ Projet solo, développé en vibecoding.
 
 ## Contenu prévu
 - [x] Personnage à pied (3e personne)
+- [x] Décor réel de l'île (routes, bâtiments, arbres, port) — données OpenStreetMap
 - 1 voiturette électrique
 - 1 voilier, 1 bateau à moteur, 1 jetski
 - Quelques touristes PNJ
@@ -35,6 +36,10 @@ src/world/, src/player/, src/vehicles/, src/npc/, src/utils/
 - [x] Étape 1 : scène Three.js de base (mer, ciel, caméra libre, cube de test)
 - [x] Étape 2 : terrain RÉEL de l'île des Embiez (données RGE ALTI 5 m IGN, voir section Données géo)
 - [x] Étape 3 : personnage à pied en 3e personne (déplacement, saut, caméra orbitale)
+- [x] Étape 4 : décor réel de l'île depuis OpenStreetMap (211 routes, 164 bâtiments, 17 pontons, 3 forêts, 11 rochers, 26 surfaces)
+- [ ] Étape 5 : voiturette électrique (entrer/sortir, conduite arcade)
+- [ ] Étape 6 : voilier, bateau à moteur, jetski
+- [ ] Étape 7 : PNJ touristes
 
 ## Décisions techniques prises
 
@@ -73,6 +78,42 @@ src/world/, src/player/, src/vehicles/, src/npc/, src/utils/
   côte, pente ~1:10, profondeur max 6 m), lisse la terre, sous-échantillonne à
   10 m (200 x 200) et écrit src/world/data/embiez.js (Float32Array en base64,
   208 Ko) — relancer ce script si on change resources/rgealti/
+
+### Données OSM (décor de l'île, étape 4)
+- Source : OpenStreetMap (données ouvertes) — PAS Google Maps (pas d'accès légal).
+  La sandbox ne peut pas joindre overpass-api.de : l'export est téléchargé à la
+  main et déposé dans resources/osm/ (gitignoré)
+- Bbox de l'île + port + pointe du Brusc : lat 43.055..43.095, lon 5.765..5.800.
+  Requête Overpass complète à coller dans https://overpass-turbo.eu (elle
+  remplace tout le contenu, ne PAS laisser le {{bbox}} par défaut), puis
+  Run, puis Export > GeoJSON, sauvegarder sous resources/export.geojson :
+      [out:json][timeout:120];
+      (
+        way["highway"](43.055,5.765,43.095,5.800);
+        way["building"](43.055,5.765,43.095,5.800);
+        way["natural"](43.055,5.765,43.095,5.800);
+        way["landuse"](43.055,5.765,43.095,5.800);
+        way["leisure"](43.055,5.765,43.095,5.800);
+        way["amenity"](43.055,5.765,43.095,5.800);
+        way["man_made"](43.055,5.765,43.095,5.800);
+        way["tourism"](43.055,5.765,43.095,5.800);
+        node["natural"="tree"](43.055,5.765,43.095,5.800);
+      );
+      out geom;
+  ("out geom;" est indispensable : il met les coordonnées dans chaque way)
+- scripts/build-embiez-osm.mjs lit resources/export.geojson (GeoJSON) et
+  écrit src/world/data/embiez-osm.js en coordonnées locales (origine =
+  centre de l'île, x = est, z = -nord, voir scripts/geo.js) : routes,
+  bâtiments (avec hauteur depuis tags height/building:levels), forêts,
+  arbres, pontons, surfaces (pitch/parking/pool/beach), rochers
+- Le décor est instancié en low-poly, posé sur le terrain via heightAt :
+  - src/world/Roads.js : routes = rubans plats (largeur selon le type),
+    pontons = rubans bois à y = 0.35, surfaces = polygones plats colorés
+  - src/world/Buildings.js : bâtiments = boîte + toit (matériau array,
+    groupe +Y = toit), rochers = icosaèdres aplatis
+  - src/world/Vegetation.js : pins (tronc + 2 cônes en InstancedMesh)
+    plantés dans les polygones landuse=forest (densité treeDensity,
+    plafond treeMax, random seeded) + arbres OSM natural=tree
 
 ### Terrain (île des Embiez)
 - Un seul mesh PlaneGeometry (2000 x 2000 m, 200 x 200 segments), hauteur lue
@@ -120,9 +161,16 @@ src/world/, src/player/, src/vehicles/, src/npc/, src/utils/
 - src/world/Sea.js : mer animée (plan ondulé CPU, somme de 2 sinus)
 - src/world/Terrain.js : terrain réel de l'île (grille de hauteurs IGN,
   interpolation bilinéaire, couleurs par vertex)
-- src/world/data/embiez.js : données du terrain (généré, 208 Ko, commité)
-- scripts/build-embiez-data.mjs : régénère src/world/data/embiez.js depuis
-  les dalles ASC de resources/rgealti/ (resources/ est gitignoré)
+- src/world/Roads.js : routes, pontons, surfaces au sol (rubans/plats)
+- src/world/Buildings.js : bâtiments OSM (boîtes + toit) et rochers
+- src/world/Vegetation.js : pins en InstancedMesh dans les forêts OSM
+- src/world/data/embiez.js : données du terrain (généré, commité)
+- src/world/data/embiez-osm.js : données du décor OSM (généré, commité)
+- scripts/geo.js : conversion WGS84 -> LAMB93 -> repère local (partagée)
+- scripts/build-embiez-data.mjs : régénère embiez.js depuis les dalles ASC
+  de resources/rgealti/ (à re-télécharger si besoin ; resources/ gitignoré)
+- scripts/build-embiez-osm.mjs : régénère embiez-osm.js depuis
+  resources/export.geojson
 - src/utils/DebugCamera.js : caméra libre de debug (ZQSD + souris/flèches)
 - src/utils/Input.js : clavier centralisé (event.code)
 - src/player/Player.js : personnage à pied (boîtes low-poly, physique arcade)
