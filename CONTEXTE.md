@@ -141,14 +141,18 @@ src/world/, src/player/, src/vehicles/, src/npc/, src/utils/
 - Position de départ : (0, 300, 900) — vue d'ensemble sur l'île
 
 ### PNJ
-- src/npc/Npc.js : un PNJ marche le long d'une route OSM (pickRoad choisit
-  la index-ième plus longue route carrossable), demi-tour aux extrémités,
-  posé sur le terrain (heightAt), bloqué par les bâtiments (resolveCollisions)
+- src/npc/Npc.js : PNJ qui marche le long d'un chemin OSM (routes + sentiers :
+  pickRoads(count) choisit `count` chemins répartis sur l'île (longueur min
+  50 m, espacés d'au moins 100 m), départ à une position aléatoire du chemin
+  (seeded), demi-tour
+  aux extrémités, posé sur le terrain (heightAt), bloqué par les bâtiments
+- src/utils/random.js : PRNG seeded (mulberry32), partagé végétation/PNJ
 - Mesh humanoïde partagé avec le joueur : src/utils/Humanoid.js
   (createHumanoid + setWalkAnimation)
-- Game instancie CONFIG.npc.count PNJ (1 par défaut), chacun sur une route
-  différente ; update dans les deux modes (player/debug), avec le joueur
-  passé en paramètre : le PNJ est repoussé si le joueur le percute
+- Game instancie CONFIG.npc.count PNJ (20 par défaut), chacun sur un chemin
+  différent avec un départ aléatoire ; update dans les deux modes
+  (player/debug), avec le joueur passé en paramètre : le PNJ est repoussé
+  si le joueur le percute
 
 ### Collisions
 - src/utils/Collisions.js : cercle (position + rayon) contre les AABB des
@@ -197,7 +201,8 @@ src/world/, src/player/, src/vehicles/, src/npc/, src/utils/
 - src/utils/Collisions.js : collisions cercle vs AABB (bâtiments)
 - src/player/Player.js : personnage à pied (physique arcade)
 - src/player/PlayerCamera.js : caméra 3e personne (orbite + lerp)
-- src/npc/Npc.js : PNJ qui marche sur une route OSM (demi-tour aux bouts)
+- src/npc/Npc.js : PNJ qui marche sur un chemin OSM (20 PNJ répartis sur l'île)
+- src/utils/random.js : PRNG seeded partagé (végétation, PNJ)
 - src/utils/Humanoid.js : mesh humanoïde low-poly partagé (joueur + PNJ)
 - Dossier prévu mais pas encore créé : vehicles/
 

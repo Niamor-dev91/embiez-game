@@ -8,7 +8,7 @@ import { Buildings } from './world/Buildings.js';
 import { Vegetation } from './world/Vegetation.js';
 import { Player } from './player/Player.js';
 import { PlayerCamera } from './player/PlayerCamera.js';
-import { Npc, pickRoad } from './npc/Npc.js';
+import { Npc, pickRoads } from './npc/Npc.js';
 import { DebugCamera } from './utils/DebugCamera.js';
 
 // Classe principale : renderer, scène, caméra, boucle d'animation.
@@ -95,11 +95,11 @@ export class Game {
     this.playerCamera = new PlayerCamera(this.canvas, this.camera, this.player, this.terrain);
     this.debugCamera = new DebugCamera(this.canvas, this.camera);
 
-    // PNJ : chacun marche sur une route différente (les plus longues d'abord)
-    this.npcs = [];
-    for (let i = 0; i < CONFIG.npc.count; i++) {
-      this.npcs.push(new Npc(this.scene, this.terrain, this.buildings.colliders, pickRoad(i)));
-    }
+    // PNJ : répartis sur des chemins différents de l'île, départ aléatoire
+    const roads = pickRoads(CONFIG.npc.count);
+    this.npcs = roads.map(
+      (road, i) => new Npc(this.scene, this.terrain, this.buildings.colliders, road, i)
+    );
   }
 
   // --- Mises à jour ---

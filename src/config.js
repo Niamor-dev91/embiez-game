@@ -71,7 +71,7 @@ export const CONFIG = {
 
   // --- PNJ (touristes qui marchent sur les routes OSM) ---
   npc: {
-    count: 1,                // nombre de PNJ (chacun sur une route différente)
+    count: 20,               // nombre de PNJ (chacun sur un chemin différent)
     walkSpeed: 2,            // mètres par seconde
     radius: 0.35,            // rayon de collision
     colors: {
