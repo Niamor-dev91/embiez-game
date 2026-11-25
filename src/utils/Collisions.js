@@ -7,6 +7,21 @@ export function buildColliders(buildings) {
   return buildings.map((b) => ({ cx: b.cx, cz: b.cz, w: b.w, d: b.d }));
 }
 
+// Pousse le cercle A hors du cercle B (A cède, B a la priorité).
+// Utilisé pour les collisions joueur <-> PNJ. Renvoie true si collision.
+export function resolveCircleVsCircle(posA, radiusA, posB, radiusB) {
+  let dx = posA.x - posB.x;
+  let dz = posA.z - posB.z;
+  let dist = Math.hypot(dx, dz);
+  if (dist < 1e-6) { dx = 1; dz = 0; dist = 1; } // centres confondus
+  const minDist = radiusA + radiusB;
+  if (dist >= minDist) return false;
+  const push = (minDist - dist) / dist;
+  posA.x += dx * push;
+  posA.z += dz * push;
+  return true;
+}
+
 // Pousse `pos` ({x, z}) hors des boîtes qui le contiennent.
 // Deux passes pour bien dégager les coins. Renvoie true si collision.
 export function resolveCollisions(pos, radius, colliders) {

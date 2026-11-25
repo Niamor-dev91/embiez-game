@@ -1,6 +1,6 @@
 import { CONFIG } from '../config.js';
 import { createHumanoid, setWalkAnimation } from '../utils/Humanoid.js';
-import { resolveCollisions } from '../utils/Collisions.js';
+import { resolveCollisions, resolveCircleVsCircle } from '../utils/Collisions.js';
 import osmData from '../world/data/embiez-osm.js';
 
 // PNJ touriste qui marche le long d'une route de l'île (données OSM),
@@ -48,7 +48,9 @@ export class Npc {
     scene.add(this.group);
   }
 
-  update(delta) {
+  // player = le joueur ({ group, radius }) ou null : le PNJ est repoussé
+  // s'il entre en collision avec lui
+  update(delta, player) {
     const p = CONFIG.npc;
     const pts = this.road.points;
     if (pts.length < 2) return;
@@ -79,15 +81,20 @@ export class Npc {
     const z = a[1] + (b[1] - a[1]) * this.t;
     pos.x = x;
     pos.z = z;
-    pos.y = this.terrain.heightAt(x, z);
+
+    // --- Collisions : le joueur pousse le PNJ, puis les bâtiments ---
+    if (player) {
+      resolveCircleVsCircle(pos, p.radius, player.group.position, CONFIG.player.radius);
+    }
+    resolveCollisions(pos, p.radius, this.colliders);
+
+    // --- Pieds sur le terrain (après les collisions horizontales) ---
+    pos.y = this.terrain.heightAt(pos.x, pos.z);
 
     // --- Orientation et animation de marche ---
     this.group.rotation.y = Math.atan2(b[0] - a[0], b[1] - a[1]);
     this.walkPhase += p.walkSpeed * delta * 2.2;
     setWalkAnimation(this.humanoid, this.walkPhase, 1);
-
-    // --- Collisions bâtiments (si la route longe un mur) ---
-    resolveCollisions(pos, p.radius, this.colliders);
   }
 
   // Passe au segment suivant ; demi-tour aux extrémités de la route

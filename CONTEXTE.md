@@ -147,7 +147,8 @@ src/world/, src/player/, src/vehicles/, src/npc/, src/utils/
 - Mesh humanoïde partagé avec le joueur : src/utils/Humanoid.js
   (createHumanoid + setWalkAnimation)
 - Game instancie CONFIG.npc.count PNJ (1 par défaut), chacun sur une route
-  différente ; update dans les deux modes (player/debug)
+  différente ; update dans les deux modes (player/debug), avec le joueur
+  passé en paramètre : le PNJ est repoussé si le joueur le percute
 
 ### Collisions
 - src/utils/Collisions.js : cercle (position + rayon) contre les AABB des
@@ -155,6 +156,8 @@ src/world/, src/player/, src/vehicles/, src/npc/, src/utils/
   resolveCollisions pousse sur l'axe de pénétration minimale, 2 passes)
 - Le joueur a un rayon (player.radius = 0.35 m) ; le module est réutilisable
   tel quel pour les futurs PNJ et véhicules
+- resolveCircleVsCircle(A, rA, B, rB) : pousse A hors de B (A cède) —
+  utilisé pour la collision joueur <-> PNJ (le PNJ est repoussé)
 - Le sol reste géré par terrain.heightAt (pas de collision verticale
   avec les bâtiments)
 

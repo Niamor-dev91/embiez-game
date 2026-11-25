@@ -106,7 +106,7 @@ export class Game {
 
   update(delta) {
     this.sea.update(delta);
-    for (const npc of this.npcs) npc.update(delta);
+    for (const npc of this.npcs) npc.update(delta, this.player);
     if (this.mode === 'debug') {
       this.debugCamera.update(delta);
     } else {
