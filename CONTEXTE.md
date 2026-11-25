@@ -154,6 +154,20 @@ src/world/, src/player/, src/vehicles/, src/npc/, src/utils/
   (player/debug), avec le joueur passé en paramètre : le PNJ est repoussé
   si le joueur le percute
 
+### Combat (pistolet, points de vie)
+- src/utils/Combat.js : fireHitscan (droite origine+direction vs cibles,
+  rayon targetRadius, portée) — le tir joueur part de la CAMÉRA vers le viseur
+- Joueur : 10 PV (combat.playerHp), pistolet visible (addGun dans
+  src/utils/Humanoid.js), tir au clic souris ou F avec cooldown
+- PNJ : 3 PV ; touché -> state 'flee' (fuit le joueur à fleeSpeed, se calme
+  à fleeDistance) ; à 0 PV -> allongé au sol (state 'dead')
+- PNJ policier (combat.policeCount = 1) : 5 PV, pistolet visible ; alerté
+  quand le joueur tire sur un PNJ -> poursuit le joueur jusqu'à
+  policeStopDistance puis tire (policeRange, policeHitChance,
+  policeFireInterval) -> joueur -1 PV
+- Mort du joueur : HUD 'KO ! R pour réapparaître', respawn au spawn avec PV max
+- HUD : #hud affiche les PV (index.html), viseur #crosshair au centre
+
 ### Collisions
 - src/utils/Collisions.js : cercle (position + rayon) contre les AABB des
   bâtiments (buildColliders depuis Buildings.colliders ;
@@ -198,7 +212,9 @@ src/world/, src/player/, src/vehicles/, src/npc/, src/utils/
   resources/export.geojson
 - src/utils/DebugCamera.js : caméra libre de debug (ZQSD + souris/flèches)
 - src/utils/Input.js : clavier centralisé (event.code)
-- src/utils/Collisions.js : collisions cercle vs AABB (bâtiments)
+- src/utils/Collisions.js : collisions cercle vs AABB (bâtiments) + cercle vs cercle
+- src/utils/Combat.js : tir hitscan (fireHitscan)
+- src/utils/Humanoid.js : mesh humanoïde + pistolet (addGun)
 - src/player/Player.js : personnage à pied (physique arcade)
 - src/player/PlayerCamera.js : caméra 3e personne (orbite + lerp)
 - src/npc/Npc.js : PNJ qui marche sur un chemin OSM (20 PNJ répartis sur l'île)

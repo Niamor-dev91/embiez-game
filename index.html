@@ -33,11 +33,33 @@
         font-family: monospace;
         color: #fff;
       }
+
+      /* Texte du HUD (PV) en haut à gauche */
+      #hud {
+        padding: 10px;
+        font-size: 16px;
+        text-shadow: 1px 1px 0 #000;
+      }
+
+      /* Viseur au centre de l'écran */
+      #crosshair {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        width: 6px;
+        height: 6px;
+        margin: -3px 0 0 -3px;
+        border-radius: 50%;
+        background: #fff;
+        opacity: 0.8;
+        pointer-events: none;
+      }
     </style>
   </head>
   <body>
     <canvas id="game-canvas"></canvas>
     <div id="hud"></div>
+    <div id="crosshair"></div>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>

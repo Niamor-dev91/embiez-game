@@ -10,6 +10,7 @@ import { Player } from './player/Player.js';
 import { PlayerCamera } from './player/PlayerCamera.js';
 import { Npc, pickRoads } from './npc/Npc.js';
 import { DebugCamera } from './utils/DebugCamera.js';
+import { Input } from './utils/Input.js';
 
 // Classe principale : renderer, scène, caméra, boucle d'animation.
 
@@ -18,6 +19,9 @@ export class Game {
   constructor(canvas) {
     this.canvas = canvas;
     this.clock = new THREE.Clock();
+    this.hud = document.getElementById('hud');
+    this.fireCooldown = 0;
+    this.lastHud = '';
 
     this.initRenderer();
     this.initScene();
@@ -96,10 +100,17 @@ export class Game {
     this.debugCamera = new DebugCamera(this.canvas, this.camera);
 
     // PNJ : répartis sur des chemins différents de l'île, départ aléatoire
-    const roads = pickRoads(CONFIG.npc.count);
-    this.npcs = roads.map(
-      (road, i) => new Npc(this.scene, this.terrain, this.buildings.colliders, road, i)
-    );
+    // + policiers (avec pistolet)
+    const roads = pickRoads(CONFIG.npc.count + CONFIG.combat.policeCount);
+    this.npcs = [];
+    for (let i = 0; i < CONFIG.npc.count; i++) {
+      this.npcs.push(new Npc(this.scene, this.terrain, this.buildings.colliders, roads[i], i, false));
+    }
+    for (let i = 0; i < CONFIG.combat.policeCount; i++) {
+      this.npcs.push(
+        new Npc(this.scene, this.terrain, this.buildings.colliders, roads[CONFIG.npc.count + i], 100 + i, true)
+      );
+    }
   }
 
   // --- Mises à jour ---
@@ -110,8 +121,34 @@ export class Game {
     if (this.mode === 'debug') {
       this.debugCamera.update(delta);
     } else {
-      this.player.update(delta, this.playerCamera.yaw);
-      this.playerCamera.update(delta);
+      // Tir du joueur (clic souris ou F) avec cooldown ; toucher un PNJ
+      // alerte les policiers
+      this.fireCooldown -= delta;
+      if (this.player.alive && (Input.mouseDown || Input.isDown('KeyF')) && this.fireCooldown <= 0) {
+        this.fireCooldown = CONFIG.combat.playerFireCooldown;
+        const target = this.player.shoot(this.npcs, this.camera);
+        if (target) {
+          for (const n of this.npcs) if (n.isPolice) n.alerted = true;
+        }
+      }
+      // Respawn après un KO
+      if (!this.player.alive && Input.isDown('KeyR')) this.player.respawn();
+      if (this.player.alive) {
+        this.player.update(delta, this.playerCamera.yaw);
+        this.playerCamera.update(delta);
+      }
+    }
+    this.updateHud();
+  }
+
+  // HUD : points de vie du joueur (en haut à gauche)
+  updateHud() {
+    const txt = this.player.alive
+      ? 'PV : ' + this.player.hp + '/' + CONFIG.combat.playerHp + '   |   clic ou F = tirer'
+      : 'KO ! Appuie sur R pour réapparaître';
+    if (txt !== this.lastHud) {
+      this.hud.textContent = txt;
+      this.lastHud = txt;
     }
   }
 

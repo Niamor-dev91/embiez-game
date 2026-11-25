@@ -1,15 +1,22 @@
 import { CONFIG } from '../config.js';
-import { createHumanoid, setWalkAnimation } from '../utils/Humanoid.js';
+import { createHumanoid, setWalkAnimation, addGun } from '../utils/Humanoid.js';
 import { resolveCollisions, resolveCircleVsCircle } from '../utils/Collisions.js';
 import { mulberry32 } from '../utils/random.js';
 import osmData from '../world/data/embiez-osm.js';
 
-// PNJ touriste qui marche le long d'un chemin de l'île (données OSM),
-// fait demi-tour aux extrémités, animé comme le joueur, posé sur le terrain
-// et bloqué par les bâtiments.
+// PNJ de l'île : marche le long d'un chemin OSM, fait demi-tour aux extrémités.
+// Avec points de vie : touché -> il fuit le joueur (sauf le policier, qui
+// poursuit et tire). Mort -> allongé au sol.
+// Le PNJ policier (isPolice) a un pistolet et attaque le joueur quand il est
+// alerté (le joueur a tiré sur un PNJ).
 
 // Chemins sur lesquels un PNJ peut marcher (routes + sentiers)
 const PATH_KINDS = ['secondary', 'residential', 'unclassified', 'service', 'pedestrian', 'footway', 'path', 'steps'];
+
+// Index de segment voisin valide (évite points[-1] et points[length])
+function clampSeg(i, length) {
+  return Math.max(0, Math.min(i, length - 1));
+}
 
 function roadLength(road) {
   let len = 0;
@@ -27,14 +34,8 @@ function centroidOf(pts) {
   return [sx / pts.length, sz / pts.length];
 }
 
-// Index de segment voisin valide (évite points[-1] et points[length])
-function clampSeg(i, length) {
-  return Math.max(0, Math.min(i, length - 1));
-}
-
-// Sélectionne `count` chemins répartis sur l'île : assez longs, sur la terre,
-// les plus longs d'abord, en gardant au moins minSpacing mètres entre leurs
-// centres.
+// Sélectionne `count` chemins répartis sur l'île (longueur min 50 m, espacés
+// d'au moins minSpacing mètres entre leurs centres), les plus longs d'abord.
 export function pickRoads(count, minSpacing = 100, minLength = 50) {
   const eligible = osmData.roads
     .filter((r) => PATH_KINDS.includes(r.kind) && roadLength(r) >= minLength)
@@ -59,14 +60,19 @@ export function pickRoads(count, minSpacing = 100, minLength = 50) {
 
 export class Npc {
 
-  constructor(scene, terrain, colliders, road, seed = 0) {
+  constructor(scene, terrain, colliders, road, seed = 0, isPolice = false) {
     this.scene = scene;
     this.terrain = terrain;
     this.colliders = colliders;
     this.road = road ?? pickRoads(1)[0];
-    this.segIndex = 0;  // segment courant entre points[segIndex] et points[segIndex+dir]
-    this.dir = 1;       // 1 = dans le sens des points, -1 = retour
-    this.t = 0;         // position 0..1 sur le segment courant
+    this.isPolice = isPolice;
+    this.hp = isPolice ? CONFIG.combat.policeHp : CONFIG.combat.npcHp;
+    this.state = 'walk'; // 'walk' | 'flee' | 'dead'
+    this.alerted = false; // policier : attaque le joueur
+    this.fireTimer = CONFIG.combat.policeFireInterval;
+    this.segIndex = 0;
+    this.dir = 1;
+    this.t = 0;
     this.walkPhase = 0;
 
     // Départ à une position aléatoire le long du chemin (reproductible)
@@ -90,6 +96,7 @@ export class Npc {
 
     this.humanoid = createHumanoid(CONFIG.npc.colors);
     this.group = this.humanoid.group;
+    if (isPolice) addGun(this.humanoid, CONFIG.combat.gunColor); // pistolet visible
     const a = this.road.points[this.segIndex];
     const b = this.road.points[clampSeg(this.segIndex + this.dir, this.road.points.length)];
     const x = a[0] + (b[0] - a[0]) * this.t;
@@ -98,39 +105,96 @@ export class Npc {
     scene.add(this.group);
   }
 
-  // player = le joueur ({ group, radius }) ou null : le PNJ est repoussé
-  // s'il entre en collision avec lui
+  takeDamage(dmg, fromPos) {
+    if (this.hp <= 0) return;
+    this.hp -= dmg;
+    if (this.hp <= 0) {
+      this.hp = 0;
+      this.die();
+      return;
+    }
+    // Touché : le PNJ normal fuit, le policier riposte
+    if (this.isPolice) this.alerted = true;
+    else this.state = 'flee';
+  }
+
+  die() {
+    this.state = 'dead';
+    setWalkAnimation(this.humanoid, this.walkPhase, 0);
+    // Allongé au sol
+    this.group.rotation.x = -Math.PI / 2;
+    this.group.position.y = this.terrain.heightAt(this.group.position.x, this.group.position.z) + 0.2;
+  }
+
+  // player = le joueur ({ group, radius, alive, takeDamage }) ou null
   update(delta, player) {
+    if (this.state === 'dead') return;
     const p = CONFIG.npc;
-    const pts = this.road.points;
-    if (pts.length < 2) return;
+    const c = CONFIG.combat;
     const pos = this.group.position;
 
-    // --- Avancer le long de la route ---
-    let remaining = p.walkSpeed * delta;
-    let guard = 1000; // sécurité anti-boucle infinie
-    while (remaining > 0 && guard-- > 0) {
+    if (this.state === 'flee' && player) {
+      // --- Fuite : s'éloigne du joueur ---
+      const dx = pos.x - player.group.position.x;
+      const dz = pos.z - player.group.position.z;
+      const d = Math.hypot(dx, dz) || 1;
+      if (d < c.fleeDistance) {
+        pos.x += (dx / d) * c.fleeSpeed * delta;
+        pos.z += (dz / d) * c.fleeSpeed * delta;
+        this.group.rotation.y = Math.atan2(dx, dz);
+        this.walkPhase += c.fleeSpeed * delta * 2.2;
+        setWalkAnimation(this.humanoid, this.walkPhase, 1);
+      } else {
+        this.state = 'walk'; // assez loin : il se calme et reprend sa route
+      }
+    } else if (this.isPolice && this.alerted && player && player.alive) {
+      // --- Policier : poursuit le joueur et tire ---
+      const dx = player.group.position.x - pos.x;
+      const dz = player.group.position.z - pos.z;
+      const d = Math.hypot(dx, dz) || 1;
+      this.group.rotation.y = Math.atan2(dx, dz);
+      if (d > c.policeStopDistance) {
+        pos.x += (dx / d) * c.policeSpeed * delta;
+        pos.z += (dz / d) * c.policeSpeed * delta;
+        this.walkPhase += c.policeSpeed * delta * 2.2;
+        setWalkAnimation(this.humanoid, this.walkPhase, 1);
+      } else {
+        setWalkAnimation(this.humanoid, this.walkPhase, 0);
+        this.fireTimer -= delta;
+        if (this.fireTimer <= 0) {
+          this.fireTimer = c.policeFireInterval;
+          if (d < c.policeRange && Math.random() < c.policeHitChance) {
+            player.takeDamage(c.damagePerShot);
+          }
+        }
+      }
+    } else {
+      // --- Marche le long du chemin ---
+      const pts = this.road.points;
+      let remaining = p.walkSpeed * delta;
+      let guard = 1000;
+      while (remaining > 0 && guard-- > 0 && pts.length >= 2) {
+        const a = pts[this.segIndex];
+        const b = pts[clampSeg(this.segIndex + this.dir, pts.length)];
+        const segLen = Math.hypot(b[0] - a[0], b[1] - a[1]);
+        if (segLen < 0.01) { this.advanceSegment(pts); continue; }
+        const distToEnd = (1 - this.t) * segLen;
+        if (remaining < distToEnd) {
+          this.t += remaining / segLen;
+          remaining = 0;
+        } else {
+          remaining -= distToEnd;
+          this.advanceSegment(pts);
+        }
+      }
       const a = pts[this.segIndex];
       const b = pts[clampSeg(this.segIndex + this.dir, pts.length)];
-      const segLen = Math.hypot(b[0] - a[0], b[1] - a[1]);
-      if (segLen < 0.01) { this.advanceSegment(pts); continue; }
-      const distToEnd = (1 - this.t) * segLen;
-      if (remaining < distToEnd) {
-        this.t += remaining / segLen;
-        remaining = 0;
-      } else {
-        remaining -= distToEnd;
-        this.advanceSegment(pts);
-      }
+      pos.x = a[0] + (b[0] - a[0]) * this.t;
+      pos.z = a[1] + (b[1] - a[1]) * this.t;
+      this.group.rotation.y = Math.atan2(b[0] - a[0], b[1] - a[1]);
+      this.walkPhase += p.walkSpeed * delta * 2.2;
+      setWalkAnimation(this.humanoid, this.walkPhase, 1);
     }
-
-    // --- Position sur le segment courant ---
-    const a = pts[this.segIndex];
-    const b = pts[clampSeg(this.segIndex + this.dir, pts.length)];
-    const x = a[0] + (b[0] - a[0]) * this.t;
-    const z = a[1] + (b[1] - a[1]) * this.t;
-    pos.x = x;
-    pos.z = z;
 
     // --- Collisions : le joueur pousse le PNJ, puis les bâtiments ---
     if (player) {
@@ -138,16 +202,11 @@ export class Npc {
     }
     resolveCollisions(pos, p.radius, this.colliders);
 
-    // --- Pieds sur le terrain (après les collisions horizontales) ---
+    // --- Pieds sur le terrain ---
     pos.y = this.terrain.heightAt(pos.x, pos.z);
-
-    // --- Orientation et animation de marche ---
-    this.group.rotation.y = Math.atan2(b[0] - a[0], b[1] - a[1]);
-    this.walkPhase += p.walkSpeed * delta * 2.2;
-    setWalkAnimation(this.humanoid, this.walkPhase, 1);
   }
 
-  // Passe au segment suivant ; demi-tour aux extrémités de la route
+  // Passe au segment suivant ; demi-tour aux extrémités du chemin
   advanceSegment(pts) {
     this.segIndex += this.dir;
     this.t = 0;

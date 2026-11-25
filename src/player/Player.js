@@ -1,9 +1,12 @@
+import * as THREE from 'three';
+
 import { CONFIG } from '../config.js';
 import { Input } from '../utils/Input.js';
 import { resolveCollisions } from '../utils/Collisions.js';
-import { createHumanoid, setWalkAnimation } from '../utils/Humanoid.js';
+import { createHumanoid, setWalkAnimation, addGun } from '../utils/Humanoid.js';
+import { fireHitscan } from '../utils/Combat.js';
 
-// Personnage à pied (3e personne) : un groupe de boîtes low-poly.
+// Personnage à pied (3e personne) avec pistolet et points de vie.
 // Déplacement au clavier (ZQSD relatif à la caméra), Shift = courir,
 // Espace = sauter. Physique arcade maison : gravité + sol du terrain.
 
@@ -16,6 +19,8 @@ export class Player {
     this.vy = 0;
     this.onGround = true;
     this.walkPhase = 0;
+    this.hp = CONFIG.combat.playerHp;
+    this.alive = true;
     this.createMesh();
 
     const s = CONFIG.player.spawn;
@@ -29,9 +34,42 @@ export class Player {
     // Mesh humanoïde partagé avec les PNJ (src/utils/Humanoid.js)
     this.humanoid = createHumanoid(CONFIG.player.colors);
     this.group = this.humanoid.group;
+    addGun(this.humanoid, CONFIG.combat.gunColor); // le joueur a un pistolet
+  }
+
+  // Tir hitscan depuis la caméra vers l'avant ; renvoie le PNJ touché ou null
+  shoot(npcs, camera) {
+    const c = CONFIG.combat;
+    const origin = camera.position;
+    const dir = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+    const targets = npcs
+      .filter((n) => n.hp > 0)
+      .map((n) => ({
+        npc: n,
+        pos: { x: n.group.position.x, y: n.group.position.y + 1.0, z: n.group.position.z },
+      }));
+    const hit = fireHitscan(origin, dir, targets, c.targetRadius, c.playerFireRange);
+    if (hit) hit.npc.takeDamage(c.damagePerShot, this.group.position);
+    return hit ? hit.npc : null;
+  }
+
+  takeDamage(dmg) {
+    if (!this.alive) return;
+    this.hp = Math.max(0, this.hp - dmg);
+    if (this.hp === 0) this.alive = false;
+  }
+
+  respawn() {
+    const s = CONFIG.player.spawn;
+    this.hp = CONFIG.combat.playerHp;
+    this.alive = true;
+    this.vy = 0;
+    this.group.rotation.set(0, 0, 0);
+    this.group.position.set(s.x, Math.max(this.terrain.heightAt(s.x, s.z), 0), s.z);
   }
 
   update(delta, cameraYaw) {
+    if (!this.alive) return;
     const p = CONFIG.player;
     const pos = this.group.position;
 

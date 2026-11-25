@@ -69,6 +69,26 @@ export const CONFIG = {
     maxPitch: 1.2,
   },
 
+  // --- Combat (pistolet, points de vie) ---
+  combat: {
+    playerHp: 10,            // points de vie du joueur
+    npcHp: 3,                // points de vie d'un PNJ
+    policeHp: 5,             // points de vie du PNJ policier
+    policeCount: 1,          // nombre de policiers
+    damagePerShot: 1,        // dégâts d'une balle
+    playerFireRange: 120,    // portée du tir joueur (m)
+    playerFireCooldown: 0.25, // secondes entre deux tirs du joueur
+    targetRadius: 0.7,       // rayon de détection d'une cible (m)
+    policeSpeed: 4.5,        // vitesse de poursuite du policier (m/s)
+    policeStopDistance: 10,  // distance à laquelle il s'arrête pour tirer (m)
+    policeRange: 25,         // portée de tir du policier (m)
+    policeHitChance: 0.7,    // probabilité de toucher par balle
+    policeFireInterval: 1.2, // secondes entre deux tirs du policier
+    fleeSpeed: 5,            // vitesse de fuite d'un PNJ touché (m/s)
+    fleeDistance: 50,        // distance à partir de laquelle le PNJ se calme (m)
+    gunColor: 0x222222,
+  },
+
   // --- PNJ (touristes qui marchent sur les routes OSM) ---
   npc: {
     count: 20,               // nombre de PNJ (chacun sur un chemin différent)

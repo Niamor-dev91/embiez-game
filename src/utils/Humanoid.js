@@ -28,3 +28,14 @@ export function setWalkAnimation(h, phase, swing) {
   h.armL.rotation.x = -Math.sin(phase) * 0.5 * swing;
   h.armR.rotation.x = Math.sin(phase) * 0.5 * swing;
 }
+
+// Pistolet low-poly à la main droite
+export function addGun(h, color = 0x222222) {
+  const gun = new THREE.Mesh(
+    new THREE.BoxGeometry(0.08, 0.12, 0.4),
+    new THREE.MeshLambertMaterial({ color })
+  );
+  gun.position.set(0.32, 0.85, 0.15);
+  h.group.add(gun);
+  return gun;
+}
