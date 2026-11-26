@@ -74,6 +74,18 @@ src/world/, src/player/, src/vehicles/, src/npc/, src/utils/
   renvoie 0.35 m si le point est sur un segment de ponton (demi-largeur
   pierWidth/2 + 0.3 m) -> on marche / roule DESSUS au lieu de tomber dans l'eau
 
+### Style Wind Waker (toon) — en cours, d'abord les bâtiments
+- Bâtiments : murs = boîtes ORIENTÉES (yaw réel du polygone OSM, calculé dans
+  build-embiez-osm.mjs via le plus long côté ; 149/164 orientés) -> correction
+  du problème d'axe autour du port ; couleurs vives par type (crème/blanc...)
+- Outline "toon" : coquille noire (MeshBasicMaterial BackSide) 6 % plus grosse
+  derrière chaque boîte (props.outlineColor/outlineScale)
+- Toit = pyramide à 4 pans rouge vif (ConeGeometry 4 pans, props.roofColor)
+- Tout en InstancedMesh : 3 draw calls pour les 160 bâtiments
+- Collisions : OBB orientées (resolveCollisions gère c.yaw, test dans le
+  repère local puis retour monde)
+- À faire ensuite : outline/couleurs sur persos, voitures, bateaux, mer, ciel
+
 ### Données géographiques (île des Embiez)
 - Source : RGE ALTI 5 m de l'IGN, D083 (Var), livraison 2022-12-05, format ASC,
   projection LAMB93, altitudes IGN69. Archive 7z dans resources/ (gitignoré,
@@ -237,7 +249,8 @@ src/world/, src/player/, src/vehicles/, src/npc/, src/utils/
   interpolation bilinéaire, couleurs par vertex)
 - src/world/Roads.js : routes, pontons, surfaces au sol (rubans/plats)
 - src/world/Ground.js : sol solide = terrain + pontons (heightAt + size)
-- src/world/Buildings.js : bâtiments OSM (boîtes + toit) et rochers
+- src/world/Buildings.js : bâtiments OSM orientés, style toon (InstancedMesh :
+  murs colorés + outline noir + toit pyramidal rouge) et rochers
 - src/world/Vegetation.js : pins en InstancedMesh dans les forêts OSM
 - src/world/data/embiez.js : données du terrain (généré, commité)
 - src/world/data/embiez-osm.js : données du décor OSM (généré, commité)

@@ -154,8 +154,11 @@ export const CONFIG = {
     pathColor: 0x9a8f7a,       // petites allées
     pierColor: 0x8a6a4a,       // pontons en bois
     pierWidth: 3,
-    buildingColors: { default: 0xd8d0c0, church: 0xf0ede0, hotel: 0xcbb890, retail: 0xb0b0b0 },
-    roofColor: 0x8a4a3a,       // toit en tuiles
+    buildingColors: { default: 0xfff2d8, church: 0xffffff, hotel: 0xffd9a0, retail: 0xcfe8ff }, // murs crème vif (style Wind Waker)
+    roofColor: 0xd84a2a,       // toit rouge vif
+    roofHeightFactor: 0.5,     // hauteur du toit = min(w, d) * ce facteur
+    outlineColor: 0x101018,    // contour noir "toon"
+    outlineScale: 1.06,        // la coquille noire dépasse de 6 %
     rockColor: 0x8a8a8a,
     surfaceColors: { default: 0x777777, pitch: 0x4a7c3a, parking: 0x666666, swimming_pool: 0x3aa0c8, beach: 0xc2b280, marina: 0x666666 },
     treeDensity: 1 / 120,      // pins par m² dans les forêts OSM

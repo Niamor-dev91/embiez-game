@@ -95,11 +95,35 @@ for (const f of data.features) {
     for (const ring of ringsOf(g)) {
       const pts = ring.map(([lon, lat]) => toLocal(lon, lat)).filter(inWindow);
       if (pts.length < 3) continue;
-      const { cx, cz, w, d } = centroidAndSize(pts);
+      // Orientation réelle du bâtiment : angle du plus long côté du ring.
+      // On projette ensuite les points sur ces axes pour avoir w/d droits.
+      let bestLen = 0;
+      let a = 0;
+      for (let i = 0; i < pts.length - 1; i++) {
+        const dx = pts[i + 1][0] - pts[i][0];
+        const dz = pts[i + 1][1] - pts[i][1];
+        const L = Math.hypot(dx, dz);
+        if (L > bestLen) { bestLen = L; a = Math.atan2(dz, dx); }
+      }
+      const yaw = -a; // prêt pour rotation.y de three.js
+      const cosA = Math.cos(a);
+      const sinA = Math.sin(a);
+      let minU = Infinity, maxU = -Infinity, minV = Infinity, maxV = -Infinity;
+      let sx = 0, sz = 0;
+      for (const [x, z] of pts) {
+        const u = x * cosA + z * sinA;
+        const v = -x * sinA + z * cosA;
+        if (u < minU) minU = u; if (u > maxU) maxU = u;
+        if (v < minV) minV = v; if (v > maxV) maxV = v;
+        sx += x; sz += z;
+      }
       buildings.push({
         kind: tags.building === 'yes' ? 'house' : tags.building,
         height: buildingHeight(tags),
-        points: pts, cx, cz, w, d,
+        points: pts,
+        cx: sx / pts.length, cz: sz / pts.length,
+        w: Math.max(maxU - minU, 2), d: Math.max(maxV - minV, 2),
+        yaw,
       });
     }
   } else if (tags.landuse === 'forest' || tags.natural === 'wood') {
