@@ -4,6 +4,7 @@ import { CONFIG } from './config.js';
 import { Sea } from './world/Sea.js';
 import { Terrain } from './world/Terrain.js';
 import { Roads } from './world/Roads.js';
+import { Ground } from './world/Ground.js';
 import { Buildings } from './world/Buildings.js';
 import { Vegetation } from './world/Vegetation.js';
 import { Player } from './player/Player.js';
@@ -99,8 +100,10 @@ export class Game {
     this.roads = new Roads(this.scene, this.terrain);
     this.buildings = new Buildings(this.scene, this.terrain);
     this.vegetation = new Vegetation(this.scene, this.terrain);
-    this.player = new Player(this.scene, this.terrain, this.buildings.colliders);
-    this.playerCamera = new PlayerCamera(this.canvas, this.camera, this.player, this.terrain);
+    // Sol solide : terrain + pontons du port (le perso marche DESSUS)
+    this.ground = new Ground(this.terrain, this.roads);
+    this.player = new Player(this.scene, this.ground, this.buildings.colliders);
+    this.playerCamera = new PlayerCamera(this.canvas, this.camera, this.player, this.ground);
     this.debugCamera = new DebugCamera(this.canvas, this.camera);
 
     // PNJ : répartis sur des chemins différents de l'île, départ aléatoire
@@ -110,18 +113,18 @@ export class Game {
     const policeRoads = pickPoliceRoads(CONFIG.combat.policeCount, roads);
     this.npcs = [];
     for (let i = 0; i < CONFIG.npc.count; i++) {
-      this.npcs.push(new Npc(this.scene, this.terrain, this.buildings.colliders, roads[i], i, false));
+      this.npcs.push(new Npc(this.scene, this.ground, this.buildings.colliders, roads[i], i, false));
     }
     for (let i = 0; i < CONFIG.combat.policeCount; i++) {
       this.npcs.push(
-        new Npc(this.scene, this.terrain, this.buildings.colliders, policeRoads[i], 100 + i, true)
+        new Npc(this.scene, this.ground, this.buildings.colliders, policeRoads[i], 100 + i, true)
       );
     }
 
     // Voiturette électrique garée sur la route la plus proche du spawn
     const s = CONFIG.player.spawn;
     const park = nearestRoadPoint(s.x, s.z);
-    this.car = new Car(this.scene, this.terrain, this.buildings.colliders, park);
+    this.car = new Car(this.scene, this.ground, this.buildings.colliders, park);
   }
 
   // --- Voiturette : entrer / sortir (touche E) ---
@@ -143,7 +146,7 @@ export class Game {
     const yaw = this.car.group.rotation.y;
     const px = p.x + Math.cos(yaw) * 2.2;
     const pz = p.z - Math.sin(yaw) * 2.2;
-    this.player.group.position.set(px, this.terrain.heightAt(px, pz), pz);
+    this.player.group.position.set(px, this.ground.heightAt(px, pz), pz);
   }
 
   // --- Mises à jour ---

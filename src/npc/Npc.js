@@ -101,9 +101,9 @@ export function pickPoliceRoads(count, taken) {
 
 export class Npc {
 
-  constructor(scene, terrain, colliders, road, seed = 0, isPolice = false) {
+  constructor(scene, ground, colliders, road, seed = 0, isPolice = false) {
     this.scene = scene;
-    this.terrain = terrain;
+    this.ground = ground; // sol solide (terrain + pontons)
     this.colliders = colliders;
     this.road = road ?? pickRoads(1)[0];
     this.isPolice = isPolice;
@@ -144,7 +144,7 @@ export class Npc {
     const b = this.road.points[clampSeg(this.segIndex + this.dir, this.road.points.length)];
     const x = a[0] + (b[0] - a[0]) * this.t;
     const z = a[1] + (b[1] - a[1]) * this.t;
-    this.group.position.set(x, terrain.heightAt(x, z), z);
+    this.group.position.set(x, ground.heightAt(x, z), z);
     scene.add(this.group);
   }
 
@@ -166,7 +166,7 @@ export class Npc {
     setWalkAnimation(this.humanoid, this.walkPhase, 0);
     // Allongé au sol
     this.group.rotation.x = -Math.PI / 2;
-    this.group.position.y = this.terrain.heightAt(this.group.position.x, this.group.position.z) + 0.2;
+    this.group.position.y = this.ground.heightAt(this.group.position.x, this.group.position.z) + 0.2;
   }
 
   // player = le joueur ({ group, radius, alive, takeDamage }) ou null
@@ -247,7 +247,7 @@ export class Npc {
     resolveCollisions(pos, p.radius, this.colliders);
 
     // --- Pieds sur le terrain ---
-    pos.y = this.terrain.heightAt(pos.x, pos.z);
+    pos.y = this.ground.heightAt(pos.x, pos.z);
   }
 
   // Passe au segment suivant ; demi-tour aux extrémités du chemin

@@ -9,11 +9,11 @@ import { Input } from '../utils/Input.js';
 
 export class PlayerCamera {
 
-  constructor(canvas, camera, player, terrain) {
+  constructor(canvas, camera, player, ground) {
     this.canvas = canvas;
     this.camera = camera;
     this.player = player;
-    this.terrain = terrain;
+    this.ground = ground; // sol solide (terrain + pontons)
     this.target = player.group; // cible suivie : joueur, ou voiturette (Game switch)
     this.yaw = 0;
     this.pitch = 0.35;
@@ -63,7 +63,7 @@ export class PlayerCamera {
     // Suivi adouci
     this.camera.position.lerp(desired, 1 - Math.exp(-c.lerpSpeed * delta));
     // La caméra ne traverse pas le sol
-    const groundY = this.terrain.heightAt(this.camera.position.x, this.camera.position.z);
+    const groundY = this.ground.heightAt(this.camera.position.x, this.camera.position.z);
     if (this.camera.position.y < groundY + 0.3) this.camera.position.y = groundY + 0.3;
     this.camera.lookAt(target.x, target.y + c.height, target.z);
   }

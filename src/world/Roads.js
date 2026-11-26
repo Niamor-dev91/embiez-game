@@ -12,9 +12,31 @@ export class Roads {
   constructor(scene, terrain) {
     this.scene = scene;
     this.terrain = terrain;
+    this.piers = osmData.piers; // polylignes des pontons (solides, voir pierHeightAt)
     this.createRoads();
     this.createPiers();
     this.createSurfaces();
+  }
+
+  // Hauteur d'un ponton au point (x, z), ou null si le point n'est pas dessus
+  pierHeightAt(x, z) {
+    const w = CONFIG.props.pierWidth / 2 + 0.3; // demi-largeur + marge
+    for (const pier of this.piers) {
+      const pts = pier.points;
+      for (let i = 0; i < pts.length - 1; i++) {
+        const [ax, az] = pts[i];
+        const [bx, bz] = pts[i + 1];
+        const dx = bx - ax;
+        const dz = bz - az;
+        const L2 = dx * dx + dz * dz;
+        let t = L2 > 0 ? ((x - ax) * dx + (z - az) * dz) / L2 : 0;
+        t = Math.max(0, Math.min(1, t));
+        const px = ax + t * dx;
+        const pz = az + t * dz;
+        if (Math.hypot(x - px, z - pz) < w) return 0.35; // pontons à 0.35 m
+      }
+    }
+    return null;
   }
 
   // Ajoute un quad (tronçon de ruban) entre p0 et p1 dans les buffers

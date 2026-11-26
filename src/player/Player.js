@@ -12,9 +12,9 @@ import { fireHitscan } from '../utils/Combat.js';
 
 export class Player {
 
-  constructor(scene, terrain, colliders = []) {
+  constructor(scene, ground, colliders = []) {
     this.scene = scene;
-    this.terrain = terrain;
+    this.ground = ground; // sol solide (terrain + pontons), interface heightAt/size
     this.colliders = colliders; // boîtes des bâtiments (src/utils/Collisions.js)
     this.vy = 0;
     this.onGround = true;
@@ -26,7 +26,7 @@ export class Player {
     const s = CONFIG.player.spawn;
     this.group.position.set(s.x, 0, s.z);
     // On cale le spawn sur le terrain
-    this.group.position.y = Math.max(this.terrain.heightAt(s.x, s.z), 0);
+    this.group.position.y = Math.max(this.ground.heightAt(s.x, s.z), 0);
     this.scene.add(this.group);
   }
 
@@ -65,7 +65,7 @@ export class Player {
     this.alive = true;
     this.vy = 0;
     this.group.rotation.set(0, 0, 0);
-    this.group.position.set(s.x, Math.max(this.terrain.heightAt(s.x, s.z), 0), s.z);
+    this.group.position.set(s.x, Math.max(this.ground.heightAt(s.x, s.z), 0), s.z);
   }
 
   update(delta, cameraYaw) {
@@ -112,7 +112,7 @@ export class Player {
     setWalkAnimation(this.humanoid, this.walkPhase, swing);
 
     // --- Limites du monde ---
-    const half = this.terrain.size / 2 - 1;
+    const half = this.ground.size / 2 - 1;
     pos.x = Math.max(-half, Math.min(half, pos.x));
     pos.z = Math.max(-half, Math.min(half, pos.z));
 
@@ -123,7 +123,7 @@ export class Player {
     if (Input.isDown('Space') && this.onGround) this.vy = p.jumpSpeed;
     this.vy -= p.gravity * delta;
     pos.y += this.vy * delta;
-    const groundY = this.terrain.heightAt(pos.x, pos.z);
+    const groundY = this.ground.heightAt(pos.x, pos.z);
     if (pos.y <= groundY) {
       pos.y = groundY;
       this.vy = 0;

@@ -11,16 +11,16 @@ import { resolveCollisions } from '../utils/Collisions.js';
 
 export class Car {
 
-  constructor(scene, terrain, colliders, park) {
+  constructor(scene, ground, colliders, park) {
     this.scene = scene;
-    this.terrain = terrain;
+    this.ground = ground; // sol solide (terrain + pontons)
     this.colliders = colliders;
     this.speed = 0;
     this.waterTime = 0;  // temps cumulé dans l'eau
     this.broken = false; // panne (après waterPanneTime secondes dans l'eau)
     this.group = new THREE.Group();
     this.createMesh();
-    this.group.position.set(park.x, terrain.heightAt(park.x, park.z), park.z);
+    this.group.position.set(park.x, ground.heightAt(park.x, park.z), park.z);
     this.group.rotation.y = park.yaw;
     scene.add(this.group);
   }
@@ -58,7 +58,7 @@ export class Car {
 
   update(delta) {
     const v = CONFIG.vehicle;
-    const groundY = this.terrain.heightAt(this.pos.x, this.pos.z);
+    const groundY = this.ground.heightAt(this.pos.x, this.pos.z);
 
     // --- Panne si la voiture reste trop longtemps dans l'eau ---
     if (groundY < 0) {
@@ -94,7 +94,7 @@ export class Car {
     }
 
     // --- Limites du monde + collisions bâtiments ---
-    const half = this.terrain.size / 2 - 2;
+    const half = this.ground.size / 2 - 2;
     this.pos.x = Math.max(-half, Math.min(half, this.pos.x));
     this.pos.z = Math.max(-half, Math.min(half, this.pos.z));
     resolveCollisions(this.pos, v.radius, this.colliders);

@@ -66,6 +66,14 @@ src/world/, src/player/, src/vehicles/, src/npc/, src/utils/
 - Couleur 0x1e6fa8
 - Attention : si on augmente les segments, surveiller les perfs
 
+### Sol solide (Ground)
+- src/world/Ground.js : heightAt(x, z) = max(terrain MNT, pontons) —
+  même interface que Terrain (heightAt + size), passé à Player, Car, Npc
+  et PlayerCamera à la place du terrain
+- Les 17 pontons OSM (man_made=pier) sont solides : Roads.pierHeightAt
+  renvoie 0.35 m si le point est sur un segment de ponton (demi-largeur
+  pierWidth/2 + 0.3 m) -> on marche / roule DESSUS au lieu de tomber dans l'eau
+
 ### Données géographiques (île des Embiez)
 - Source : RGE ALTI 5 m de l'IGN, D083 (Var), livraison 2022-12-05, format ASC,
   projection LAMB93, altitudes IGN69. Archive 7z dans resources/ (gitignoré,
@@ -218,6 +226,7 @@ src/world/, src/player/, src/vehicles/, src/npc/, src/utils/
 - src/world/Terrain.js : terrain réel de l'île (grille de hauteurs IGN,
   interpolation bilinéaire, couleurs par vertex)
 - src/world/Roads.js : routes, pontons, surfaces au sol (rubans/plats)
+- src/world/Ground.js : sol solide = terrain + pontons (heightAt + size)
 - src/world/Buildings.js : bâtiments OSM (boîtes + toit) et rochers
 - src/world/Vegetation.js : pins en InstancedMesh dans les forêts OSM
 - src/world/data/embiez.js : données du terrain (généré, commité)
