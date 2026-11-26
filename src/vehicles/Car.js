@@ -19,7 +19,10 @@ export class Car {
     this.speed = 0;
     this.waterTime = 0;  // temps cumulé dans l'eau
     this.broken = false; // panne (après waterPanneTime secondes dans l'eau)
+    this.pitch = 0;      // inclinaison terrain (montée/descente)
+    this.roll = 0;       // inclinaison latérale (devers)
     this.group = new THREE.Group();
+    this.group.rotation.order = 'YXZ'; // yaw d'abord, puis pitch/roll
     this.createMesh();
     this.group.position.set(park.x, ground.heightAt(park.x, park.z), park.z);
     this.group.rotation.y = park.yaw;
@@ -106,6 +109,24 @@ export class Car {
 
     // --- Sur le terrain (dans l'eau elle coule sous le niveau de la mer) ---
     this.pos.y = groundY;
+
+    // --- La caisse suit la pente du terrain (montée/descente + devers) ---
+    const yaw = this.group.rotation.y;
+    const fx = Math.sin(yaw);
+    const fz = Math.cos(yaw);
+    const rx = Math.cos(yaw);
+    const rz = -Math.sin(yaw);
+    const yF = this.ground.heightAt(this.pos.x + fx * 1.6, this.pos.z + fz * 1.6);
+    const yB = this.ground.heightAt(this.pos.x - fx * 1.6, this.pos.z - fz * 1.6);
+    const yR = this.ground.heightAt(this.pos.x + rx * 0.8, this.pos.z + rz * 0.8);
+    const yL = this.ground.heightAt(this.pos.x - rx * 0.8, this.pos.z - rz * 0.8);
+    const targetPitch = Math.atan2(yB - yF, 3.2); // < 0 en montée (nez en haut)
+    const targetRoll = Math.atan2(yR - yL, 1.6);
+    const k = Math.min(1, v.tiltSpeed * delta); // lissage
+    this.pitch += (targetPitch - this.pitch) * k;
+    this.roll += (targetRoll - this.roll) * k;
+    this.group.rotation.x = this.pitch;
+    this.group.rotation.z = this.roll;
 
     // --- Roues qui tournent ---
     for (const w of this.wheels) w.rotation.x += (this.speed * delta) / v.wheelRadius;

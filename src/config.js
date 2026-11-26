@@ -85,6 +85,7 @@ export const CONFIG = {
     interactDistance: 3,     // distance max pour entrer avec E
     waterPanneTime: 3,        // secondes dans l'eau avant la panne (s)
     npcHitCooldown: 1,       // secondes entre deux pertes de PV (voiture vs PNJ)
+    tiltSpeed: 10,           // vitesse de lissage de l'inclinaison sur le terrain
   },
 
   // --- Bateaux du port (voilier, moteur, jetski) ---

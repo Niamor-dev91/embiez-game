@@ -196,6 +196,9 @@ src/world/, src/player/, src/vehicles/, src/npc/, src/utils/
 - Panne : si la voiture reste plus de vehicle.waterPanneTime (3 s) dans l'eau
   (heightAt < 0), elle est en panne (broken) : speed = 0, HUD « PANNE ! »
 - HUD : « E : prendre la voiturette » près de la voiture, « ZQSD = conduire » dedans
+- La caisse suit la pente du terrain : pitch/roll calculés depuis heightAt
+  échantillonné devant/derrière (±1.6 m) et droite/gauche (±0.8 m), lissés avec
+  vehicle.tiltSpeed, rotation.order 'YXZ' (montée = nez en haut, rotation.x < 0)
 
 ### Bateaux du port (étape 6)
 - src/vehicles/Boat.js : Boat(type = voilier|moteur|jetski), mesh low-poly
