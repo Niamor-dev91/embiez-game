@@ -11,6 +11,7 @@ import { Player } from './player/Player.js';
 import { PlayerCamera } from './player/PlayerCamera.js';
 import { Npc, pickRoads, pickPoliceRoads, nearestRoadPoint } from './npc/Npc.js';
 import { Car } from './vehicles/Car.js';
+import { Boat, dockSpots } from './vehicles/Boat.js';
 import { DebugCamera } from './utils/DebugCamera.js';
 import { Input } from './utils/Input.js';
 import { resolveCircleVsCircle } from './utils/Collisions.js';
@@ -25,8 +26,8 @@ export class Game {
     this.hud = document.getElementById('hud');
     this.fireCooldown = 0;
     this.lastHud = '';
-    this.inCar = false;
-    this.eHeld = false; // détection de front montant pour la touche E
+    this.vehicle = null; // véhicule actif (car ou boat), null = à pied
+    this.eHeld = false;  // détection de front montant pour la touche E
 
     this.initRenderer();
     this.initScene();
@@ -121,31 +122,54 @@ export class Game {
       );
     }
 
-    // Voiturette électrique garée sur la route la plus proche du spawn
+    // Voiturette électrique garée sur la route la plus proche du spawn,
+    // décalée de 6 m le long de la route pour ne pas être sur le joueur
     const s = CONFIG.player.spawn;
     const park = nearestRoadPoint(s.x, s.z);
+    park.x += Math.sin(park.yaw) * 6;
+    park.z += Math.cos(park.yaw) * 6;
     this.car = new Car(this.scene, this.ground, this.buildings.colliders, park);
+
+    // Bateaux amarrés aux pontons du port (voilier, moteur, jetski)
+    const spots = dockSpots(CONFIG.boat.types.length, this.ground, s);
+    this.boats = CONFIG.boat.types.map((t, i) =>
+      new Boat(this.scene, this.ground, { ...spots[i], type: t })
+    );
   }
 
-  // --- Voiturette : entrer / sortir (touche E) ---
+  // --- Véhicules (voiturette + bateaux) : entrer / sortir avec E ---
 
-  enterCar() {
-    this.inCar = true;
+  get vehicles() {
+    return [this.car, ...this.boats];
+  }
+
+  vehicleLabel(v) {
+    return v === this.car ? 'la voiturette' : v.label;
+  }
+
+  vehicleInteractDistance(v) {
+    return v === this.car ? CONFIG.vehicle.interactDistance : CONFIG.boat.interactDistance;
+  }
+
+  enterVehicle(v) {
+    this.vehicle = v;
     this.player.group.visible = false;
-    this.playerCamera.target = this.car.group;
-    this.playerCamera.distance = CONFIG.vehicle.cameraDistance;
+    this.playerCamera.target = v.group;
+    this.playerCamera.distance = v === this.car ? CONFIG.vehicle.cameraDistance : CONFIG.boat.cameraDistance;
   }
 
-  exitCar() {
-    this.inCar = false;
+  exitVehicle() {
+    const v = this.vehicle;
+    this.vehicle = null;
     this.player.group.visible = true;
     this.playerCamera.target = this.player.group;
     this.playerCamera.distance = CONFIG.playerCamera.distance;
-    // Le joueur réapparaît à côté de la voiture, sur le terrain
-    const p = this.car.pos;
-    const yaw = this.car.group.rotation.y;
-    const px = p.x + Math.cos(yaw) * 2.2;
-    const pz = p.z - Math.sin(yaw) * 2.2;
+    // Le joueur réapparaît à côté du véhicule, sur le sol
+    const p = v.pos;
+    const yaw = v.group.rotation.y;
+    const off = (v.radius || 2) + 1;
+    const px = p.x + Math.cos(yaw) * off;
+    const pz = p.z - Math.sin(yaw) * off;
     this.player.group.position.set(px, this.ground.heightAt(px, pz), pz);
   }
 
@@ -170,52 +194,61 @@ export class Game {
       // Respawn après un KO
       if (!this.player.alive && Input.isDown('KeyR')) this.player.respawn();
 
-      // Entrer/sortir de la voiturette (E, front montant)
+      // Entrer/sortir d'un véhicule (E, front montant) : le plus proche
       const eDown = Input.isDown('KeyE');
       if (eDown && !this.eHeld) {
-        if (!this.inCar) {
-          const d = Math.hypot(
-            this.player.group.position.x - this.car.pos.x,
-            this.player.group.position.z - this.car.pos.z
-          );
-          if (d < CONFIG.vehicle.interactDistance) this.enterCar();
+        if (!this.vehicle) {
+          let best = null;
+          let bd = Infinity;
+          for (const v of this.vehicles) {
+            const d = Math.hypot(
+              this.player.group.position.x - v.pos.x,
+              this.player.group.position.z - v.pos.z
+            );
+            if (d < bd) { bd = d; best = v; }
+          }
+          if (best && bd < this.vehicleInteractDistance(best)) this.enterVehicle(best);
         } else {
-          this.exitCar();
+          this.exitVehicle();
         }
       }
       this.eHeld = eDown;
 
-      if (this.inCar) {
-        this.car.update(delta);
-        // Collisions voiture <-> PNJ : -1 PV au PNJ (avec cooldown) et on l'écarte
-        for (const npc of this.npcs) {
-          if (npc.hp <= 0) continue;
-          const d = Math.hypot(
-            npc.group.position.x - this.car.pos.x,
-            npc.group.position.z - this.car.pos.z
-          );
-          if (d < CONFIG.vehicle.radius + CONFIG.npc.radius) {
-            if (npc.carHitCooldown <= 0) {
-              npc.takeDamage(CONFIG.combat.damagePerShot, this.car.pos);
-              npc.carHitCooldown = CONFIG.vehicle.npcHitCooldown;
-            }
-            resolveCircleVsCircle(
-              npc.group.position,
-              CONFIG.npc.radius,
-              this.car.pos,
-              CONFIG.vehicle.radius
+      if (this.vehicle) {
+        this.vehicle.update(delta);
+        // En voiture : collisions avec les PNJ (-1 PV, cooldown, on les écarte)
+        if (this.vehicle === this.car) {
+          for (const npc of this.npcs) {
+            if (npc.hp <= 0) continue;
+            const d = Math.hypot(
+              npc.group.position.x - this.car.pos.x,
+              npc.group.position.z - this.car.pos.z
             );
+            if (d < CONFIG.vehicle.radius + CONFIG.npc.radius) {
+              if (npc.carHitCooldown <= 0) {
+                npc.takeDamage(CONFIG.combat.damagePerShot, this.car.pos);
+                npc.carHitCooldown = CONFIG.vehicle.npcHitCooldown;
+              }
+              resolveCircleVsCircle(
+                npc.group.position,
+                CONFIG.npc.radius,
+                this.car.pos,
+                CONFIG.vehicle.radius
+              );
+            }
           }
         }
       } else if (this.player.alive) {
         this.player.update(delta, this.playerCamera.yaw);
-        // Le joueur ne traverse pas la voiturette
-        resolveCircleVsCircle(
-          this.player.group.position,
-          CONFIG.player.radius,
-          this.car.pos,
-          CONFIG.vehicle.radius
-        );
+        // Le joueur ne traverse aucun véhicule
+        for (const v of this.vehicles) {
+          resolveCircleVsCircle(
+            this.player.group.position,
+            CONFIG.player.radius,
+            v.pos,
+            v.radius || CONFIG.vehicle.radius
+          );
+        }
       }
       this.playerCamera.update(delta);
     }
@@ -229,16 +262,25 @@ export class Game {
       txt = 'KO ! Appuie sur R pour réapparaître';
     } else {
       txt = 'PV : ' + this.player.hp + '/' + CONFIG.combat.playerHp + '   |   clic ou F = tirer';
-      if (this.inCar) {
-        txt += this.car.broken
-          ? "   |   PANNE ! (trop longtemps dans l'eau)   |   E = sortir"
-          : '   |   ZQSD = conduire, E = sortir';
+      if (this.vehicle) {
+        const pan = this.vehicle === this.car && this.car.broken
+          ? "   |   PANNE ! (trop longtemps dans l'eau)"
+          : '';
+        txt += '   |   ZQSD = conduire ' + this.vehicleLabel(this.vehicle) + ', E = sortir' + pan;
       } else {
-        const d = Math.hypot(
-          this.player.group.position.x - this.car.pos.x,
-          this.player.group.position.z - this.car.pos.z
-        );
-        if (d < CONFIG.vehicle.interactDistance) txt += '   |   E : prendre la voiturette';
+        // Véhicule le plus proche, s'il est assez près
+        let best = null;
+        let bd = Infinity;
+        for (const v of this.vehicles) {
+          const d = Math.hypot(
+            this.player.group.position.x - v.pos.x,
+            this.player.group.position.z - v.pos.z
+          );
+          if (d < bd) { bd = d; best = v; }
+        }
+        if (best && bd < this.vehicleInteractDistance(best)) {
+          txt += '   |   E : prendre ' + this.vehicleLabel(best);
+        }
       }
     }
     if (txt !== this.lastHud) {

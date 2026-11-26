@@ -38,7 +38,7 @@ src/world/, src/player/, src/vehicles/, src/npc/, src/utils/
 - [x] Étape 3 : personnage à pied en 3e personne (déplacement, saut, caméra orbitale)
 - [x] Étape 4 : décor réel de l'île depuis OpenStreetMap (211 routes, 164 bâtiments, 17 pontons, 3 forêts, 11 rochers, 26 surfaces)
 - [x] Étape 5 : voiturette électrique (E pour entrer/sortir, conduite arcade ZQSD)
-- [ ] Étape 6 : voilier, bateau à moteur, jetski
+- [x] Étape 6 : voilier, bateau à moteur, jetski au port (montables avec E, s'arrêtent à la côte)
 - [~] Étape 7 : PNJ touristes (1 PNJ qui marche sur une route OSM pour l'instant)
 
 ## Décisions techniques prises
@@ -177,6 +177,16 @@ src/world/, src/player/, src/vehicles/, src/npc/, src/utils/
   (heightAt < 0), elle est en panne (broken) : speed = 0, HUD « PANNE ! »
 - HUD : « E : prendre la voiturette » près de la voiture, « ZQSD = conduire » dedans
 
+### Bateaux du port (étape 6)
+- src/vehicles/Boat.js : Boat(type = voilier|moteur|jetski), mesh low-poly
+  par type, amarrage via dockSpots (un bateau par ponton OSM, côté eau)
+- Conduite sur l'eau ZQSD ; le bateau s'ARRÊTE au contact de la terre ou
+  d'un ponton : si ground.heightAt(nouvelle pos) >= 0, le déplacement est
+  annulé et speed = 0
+- Game gère un véhicule générique (this.vehicle = car ou boat) : E monte
+  dans le véhicule le plus proche, caméra 3e personne dessus ; à pied le
+  joueur ne traverse aucun véhicule
+
 ### Combat (pistolet, points de vie)
 - src/utils/Combat.js : fireHitscan (droite origine+direction vs cibles,
   rayon targetRadius, portée) — le tir joueur part de la CAMÉRA vers le viseur
@@ -241,10 +251,13 @@ src/world/, src/player/, src/vehicles/, src/npc/, src/utils/
 - src/utils/Collisions.js : collisions cercle vs AABB (bâtiments) + cercle vs cercle
 - src/utils/Combat.js : tir hitscan (fireHitscan)
 - src/vehicles/Car.js : voiturette électrique (conduite arcade)
+- src/vehicles/Boat.js : voilier/moteur/jetski amarrés aux pontons
 - src/player/PlayerCamera.js : cible switchable (joueur <-> voiture)
 - src/utils/Humanoid.js : mesh humanoïde + pistolet (addGun)
 - src/player/Player.js : personnage à pied (physique arcade)
 - src/player/PlayerCamera.js : caméra 3e personne (orbite + lerp)
+- Spawn au quai du port de l'île : player.spawn = (-3, -349), sol ~2 m,
+  voiturette garée à 6 m, voilier/moteur/jetski amarrés à 26/49/84 m
 - src/npc/Npc.js : PNJ qui marche sur un chemin OSM (40 PNJ répartis +
   policiers près du village via pickPoliceRoads)
 - src/utils/random.js : PRNG seeded partagé (végétation, PNJ)

@@ -49,7 +49,7 @@ export const CONFIG = {
     turnSpeed: 12,           // vitesse de rotation du perso (rad/s)
     gravity: 25,             // mètres par seconde carrée
     jumpSpeed: 9,            // impulsion du saut (m/s)
-    spawn: { x: -220, z: 120 }, // plage au sud-ouest de l'île (y calé sur le terrain)
+    spawn: { x: -3, z: -349 }, // quai du port de l'île, à côté des pontons (y calé sur le sol)
     colors: {
       body: 0x3a6fd8,
       head: 0xd8a880,
@@ -85,6 +85,27 @@ export const CONFIG = {
     interactDistance: 3,     // distance max pour entrer avec E
     waterPanneTime: 3,        // secondes dans l'eau avant la panne (s)
     npcHitCooldown: 1,       // secondes entre deux pertes de PV (voiture vs PNJ)
+  },
+
+  // --- Bateaux du port (voilier, moteur, jetski) ---
+  boat: {
+    types: ['voilier', 'moteur', 'jetski'],
+    maxSpeed: 8,             // m/s en avant
+    maxReverseSpeed: 3,      // m/s en marche arrière
+    acceleration: 5,
+    brake: 8,
+    friction: 2,
+    turnSpeed: 1.6,          // rad/s
+    interactDistance: 3.5,   // distance max pour monter avec E
+    cameraDistance: 9,
+    radius: { voilier: 2.5, moteur: 1.6, jetski: 1.1 }, // rayons de collision
+    colors: {
+      coque: 0xe8e8e8,
+      voile: 0xf5f5f0,
+      coqueMoteur: 0x3aa0d8,
+      jetski: 0xd8a03a,
+      mat: 0x8a6a4a,
+    },
   },
 
   // --- Combat (pistolet, points de vie) ---
