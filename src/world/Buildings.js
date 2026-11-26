@@ -61,24 +61,39 @@ export class Buildings {
       e.set(0, b.yaw, 0);
       q.setFromEuler(e);
 
+      // Base des murs : le point le plus BAS des 4 coins du bâtiment (dans le
+      // repère monde, rotation yaw) moins une marge -> sur une pente, les murs
+      // descendent jusqu'au sol au lieu de flotter d'un côté.
+      const cosY = Math.cos(b.yaw);
+      const sinY = Math.sin(b.yaw);
+      let minCorner = Infinity;
+      for (const [lx, lz] of [[b.w / 2, b.d / 2], [b.w / 2, -b.d / 2], [-b.w / 2, b.d / 2], [-b.w / 2, -b.d / 2]]) {
+        const wx = b.cx + lx * cosY + lz * sinY;
+        const wz = b.cz - lx * sinY + lz * cosY;
+        minCorner = Math.min(minCorner, this.terrain.heightAt(wx, wz));
+      }
+      const baseY = minCorner - p.foundationMargin; // enfoncé dans le sol
+      const wallTop = y + b.height;                  // le haut du mur ne change pas
+      const wallH = wallTop - baseY;
+
       // Murs (couleur vive selon le type)
-      v.set(b.cx, y + b.height / 2, b.cz);
-      s.set(b.w, b.height, b.d);
+      v.set(b.cx, baseY + wallH / 2, b.cz);
+      s.set(b.w, wallH, b.d);
       m.compose(v, q, s);
       walls.setMatrixAt(i, m);
       col.set(p.buildingColors[b.kind] ?? p.buildingColors.default);
       walls.setColorAt(i, col);
 
       // Coquille noire = outline toon
-      v.set(b.cx, y + b.height / 2, b.cz);
-      s.set(b.w * p.outlineScale, b.height * 1.04, b.d * p.outlineScale);
+      v.set(b.cx, baseY + wallH / 2, b.cz);
+      s.set(b.w * p.outlineScale, wallH * 1.04, b.d * p.outlineScale);
       m.compose(v, q, s);
       shells.setMatrixAt(i, m);
 
-      // Toit pyramidal rouge : même rotation que les murs
+      // Toit pyramidal rouge : même rotation que les murs, posé sur le haut
       e.set(0, b.yaw, 0);
       q.setFromEuler(e);
-      v.set(b.cx, y + b.height + roofH / 2, b.cz);
+      v.set(b.cx, wallTop + roofH / 2, b.cz);
       s.set(b.w * 0.85, roofH, b.d * 0.85); // léger débord de toit
       m.compose(v, q, s);
       roofs.setMatrixAt(i, m);

@@ -161,6 +161,7 @@ export const CONFIG = {
     roofHeightFactor: 0.5,     // hauteur du toit = min(w, d) * ce facteur
     outlineColor: 0x101018,    // contour noir "toon"
     outlineScale: 1.06,        // la coquille noire dépasse de 6 %
+    foundationMargin: 0.6,     // les murs des bâtiments s'enfoncent de 0.6 m sous le point le plus bas (pentes)
     rockColor: 0x8a8a8a,
     surfaceColors: { default: 0x777777, pitch: 0x4a7c3a, parking: 0x666666, swimming_pool: 0x3aa0c8, beach: 0xc2b280, marina: 0x2fa8e8 /* bassin du port en bleu mer, pas gris */ },
     treeDensity: 1 / 120,      // pins par m² dans les forêts OSM
@@ -177,7 +178,7 @@ export const CONFIG = {
     segments: 200,           // subdivisions du mesh (résolution 10 m)
     paintResolution: 4096,   // texture du sol (fond recopié + routes peintes) : 1 px ~ 0.5 m
     beachHeight: 3,          // altitude max considérée comme plage (mètres) : sable dès le bord de mer
-    rockHeight: 15,          // altitude à partir de laquelle c'est de la végétation haute
+    rockHeight: 100,         // au-dessus du max de l'île (57 m) : jamais de zone vert foncé, herbe partout
     colorBlendWidth: 8,      // largeur du dégradé entre deux zones de couleur du sol (m)
     waterDepth: 6,           // profondeur des fonds marins hors données (mètres)
     colors: {

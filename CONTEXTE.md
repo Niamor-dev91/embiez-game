@@ -82,6 +82,9 @@ src/world/, src/player/, src/vehicles/, src/npc/, src/utils/
   derrière chaque boîte (props.outlineColor/outlineScale)
 - Toit = pyramide à 4 pans rouge vif (ConeGeometry 4 pans, props.roofColor)
 - Tout en InstancedMesh : 3 draw calls pour les 160 bâtiments
+- Sur les pentes, les murs descendent jusqu'au sol : base = min(heightAt des
+  4 coins du bâtiment) - props.foundationMargin (0.6 m), le haut du mur et
+  le toit restent à la même hauteur
 - Collisions : OBB orientées (resolveCollisions gère c.yaw, test dans le
   repère local puis retour monde, convention three.js : local = R(-yaw)·monde,
   retour monde = R(+yaw)·local — signe opposé à l'avant, les colliders
