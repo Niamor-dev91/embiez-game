@@ -58,6 +58,35 @@ export function pickRoads(count, minSpacing = 100, minLength = 50) {
   return chosen;
 }
 
+// Point de route le plus proche de (x, z), avec l'orientation du segment :
+// sert à garer la voiturette près du spawn.
+export function nearestRoadPoint(x, z) {
+  let best = null;
+  let bd = Infinity;
+  let byaw = 0;
+  for (const r of osmData.roads) {
+    if (!PATH_KINDS.includes(r.kind)) continue;
+    for (let i = 0; i < r.points.length - 1; i++) {
+      const [ax, az] = r.points[i];
+      const [bx, bz] = r.points[i + 1];
+      const dx = bx - ax;
+      const dz = bz - az;
+      const L2 = dx * dx + dz * dz;
+      let t = L2 > 0 ? ((x - ax) * dx + (z - az) * dz) / L2 : 0;
+      t = Math.max(0, Math.min(1, t));
+      const px = ax + t * dx;
+      const pz = az + t * dz;
+      const d = Math.hypot(x - px, z - pz);
+      if (d < bd) {
+        bd = d;
+        best = { x: px, z: pz };
+        byaw = Math.atan2(dx, dz);
+      }
+    }
+  }
+  return { x: best.x, z: best.z, yaw: byaw };
+}
+
 // Chemins les plus proches du centre de l'île (le village), hors `taken` :
 // pour placer les policiers là où il y a du monde.
 export function pickPoliceRoads(count, taken) {

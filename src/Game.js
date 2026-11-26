@@ -8,9 +8,11 @@ import { Buildings } from './world/Buildings.js';
 import { Vegetation } from './world/Vegetation.js';
 import { Player } from './player/Player.js';
 import { PlayerCamera } from './player/PlayerCamera.js';
-import { Npc, pickRoads, pickPoliceRoads } from './npc/Npc.js';
+import { Npc, pickRoads, pickPoliceRoads, nearestRoadPoint } from './npc/Npc.js';
+import { Car } from './vehicles/Car.js';
 import { DebugCamera } from './utils/DebugCamera.js';
 import { Input } from './utils/Input.js';
+import { resolveCircleVsCircle } from './utils/Collisions.js';
 
 // Classe principale : renderer, scène, caméra, boucle d'animation.
 
@@ -22,6 +24,8 @@ export class Game {
     this.hud = document.getElementById('hud');
     this.fireCooldown = 0;
     this.lastHud = '';
+    this.inCar = false;
+    this.eHeld = false; // détection de front montant pour la touche E
 
     this.initRenderer();
     this.initScene();
@@ -113,6 +117,33 @@ export class Game {
         new Npc(this.scene, this.terrain, this.buildings.colliders, policeRoads[i], 100 + i, true)
       );
     }
+
+    // Voiturette électrique garée sur la route la plus proche du spawn
+    const s = CONFIG.player.spawn;
+    const park = nearestRoadPoint(s.x, s.z);
+    this.car = new Car(this.scene, this.terrain, this.buildings.colliders, park);
+  }
+
+  // --- Voiturette : entrer / sortir (touche E) ---
+
+  enterCar() {
+    this.inCar = true;
+    this.player.group.visible = false;
+    this.playerCamera.target = this.car.group;
+    this.playerCamera.distance = CONFIG.vehicle.cameraDistance;
+  }
+
+  exitCar() {
+    this.inCar = false;
+    this.player.group.visible = true;
+    this.playerCamera.target = this.player.group;
+    this.playerCamera.distance = CONFIG.playerCamera.distance;
+    // Le joueur réapparaît à côté de la voiture, sur le terrain
+    const p = this.car.pos;
+    const yaw = this.car.group.rotation.y;
+    const px = p.x + Math.cos(yaw) * 2.2;
+    const pz = p.z - Math.sin(yaw) * 2.2;
+    this.player.group.position.set(px, this.terrain.heightAt(px, pz), pz);
   }
 
   // --- Mises à jour ---
@@ -135,19 +166,56 @@ export class Game {
       }
       // Respawn après un KO
       if (!this.player.alive && Input.isDown('KeyR')) this.player.respawn();
-      if (this.player.alive) {
-        this.player.update(delta, this.playerCamera.yaw);
-        this.playerCamera.update(delta);
+
+      // Entrer/sortir de la voiturette (E, front montant)
+      const eDown = Input.isDown('KeyE');
+      if (eDown && !this.eHeld) {
+        if (!this.inCar) {
+          const d = Math.hypot(
+            this.player.group.position.x - this.car.pos.x,
+            this.player.group.position.z - this.car.pos.z
+          );
+          if (d < CONFIG.vehicle.interactDistance) this.enterCar();
+        } else {
+          this.exitCar();
+        }
       }
+      this.eHeld = eDown;
+
+      if (this.inCar) {
+        this.car.update(delta);
+      } else if (this.player.alive) {
+        this.player.update(delta, this.playerCamera.yaw);
+        // Le joueur ne traverse pas la voiturette
+        resolveCircleVsCircle(
+          this.player.group.position,
+          CONFIG.player.radius,
+          this.car.pos,
+          CONFIG.vehicle.radius
+        );
+      }
+      this.playerCamera.update(delta);
     }
     this.updateHud();
   }
 
-  // HUD : points de vie du joueur (en haut à gauche)
+  // HUD : points de vie du joueur + infos (en haut à gauche)
   updateHud() {
-    const txt = this.player.alive
-      ? 'PV : ' + this.player.hp + '/' + CONFIG.combat.playerHp + '   |   clic ou F = tirer'
-      : 'KO ! Appuie sur R pour réapparaître';
+    let txt;
+    if (!this.player.alive) {
+      txt = 'KO ! Appuie sur R pour réapparaître';
+    } else {
+      txt = 'PV : ' + this.player.hp + '/' + CONFIG.combat.playerHp + '   |   clic ou F = tirer';
+      if (this.inCar) {
+        txt += '   |   ZQSD = conduire, E = sortir';
+      } else {
+        const d = Math.hypot(
+          this.player.group.position.x - this.car.pos.x,
+          this.player.group.position.z - this.car.pos.z
+        );
+        if (d < CONFIG.vehicle.interactDistance) txt += '   |   E : prendre la voiturette';
+      }
+    }
     if (txt !== this.lastHud) {
       this.hud.textContent = txt;
       this.lastHud = txt;

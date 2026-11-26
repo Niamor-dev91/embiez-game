@@ -14,6 +14,7 @@ export class PlayerCamera {
     this.camera = camera;
     this.player = player;
     this.terrain = terrain;
+    this.target = player.group; // cible suivie : joueur, ou voiturette (Game switch)
     this.yaw = 0;
     this.pitch = 0.35;
     this.enabled = true;
@@ -51,8 +52,8 @@ export class PlayerCamera {
     if (Input.isDown('ArrowDown')) this.pitch -= c.keyTurnSpeed * delta;
     this.clampPitch();
 
-    // Position souhaitée : derrière et au-dessus du joueur
-    const target = this.player.group.position;
+    // Position souhaitée : derrière et au-dessus de la cible (joueur/voiture)
+    const target = this.target.position;
     const cp = Math.cos(this.pitch);
     const desired = new THREE.Vector3(
       target.x + Math.sin(this.yaw) * cp * c.distance,

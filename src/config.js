@@ -69,6 +69,22 @@ export const CONFIG = {
     maxPitch: 1.2,
   },
 
+  // --- Voiturette électrique ---
+  vehicle: {
+    bodyColor: 0x3aa0d8,     // carrosserie
+    cabinColor: 0x9ad4ee,    // habitacle
+    wheelRadius: 0.35,
+    radius: 1.3,             // rayon de collision de la voiture
+    maxSpeed: 14,            // m/s en avant
+    maxReverseSpeed: 5,      // m/s en marche arrière
+    acceleration: 8,         // m/s²
+    brake: 12,               // frein / marche arrière
+    friction: 3,             // ralentissement naturel (m/s²)
+    turnSpeed: 2.2,          // rad/s (à pleine vitesse)
+    cameraDistance: 8,       // distance de la caméra en mode voiture
+    interactDistance: 3,     // distance max pour entrer avec E
+  },
+
   // --- Combat (pistolet, points de vie) ---
   combat: {
     playerHp: 10,            // points de vie du joueur

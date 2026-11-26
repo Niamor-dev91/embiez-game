@@ -14,7 +14,7 @@ Projet solo, développé en vibecoding.
 ## Contenu prévu
 - [x] Personnage à pied (3e personne)
 - [x] Décor réel de l'île (routes, bâtiments, arbres, port) — données OpenStreetMap
-- 1 voiturette électrique
+- [x] 1 voiturette électrique
 - 1 voilier, 1 bateau à moteur, 1 jetski
 - Quelques touristes PNJ
 - Pas de missions pour l'instant
@@ -37,7 +37,7 @@ src/world/, src/player/, src/vehicles/, src/npc/, src/utils/
 - [x] Étape 2 : terrain RÉEL de l'île des Embiez (données RGE ALTI 5 m IGN, voir section Données géo)
 - [x] Étape 3 : personnage à pied en 3e personne (déplacement, saut, caméra orbitale)
 - [x] Étape 4 : décor réel de l'île depuis OpenStreetMap (211 routes, 164 bâtiments, 17 pontons, 3 forêts, 11 rochers, 26 surfaces)
-- [ ] Étape 5 : voiturette électrique (entrer/sortir, conduite arcade)
+- [x] Étape 5 : voiturette électrique (E pour entrer/sortir, conduite arcade ZQSD)
 - [ ] Étape 6 : voilier, bateau à moteur, jetski
 - [~] Étape 7 : PNJ touristes (1 PNJ qui marche sur une route OSM pour l'instant)
 
@@ -154,6 +154,17 @@ src/world/, src/player/, src/vehicles/, src/npc/, src/utils/
   (player/debug), avec le joueur passé en paramètre : le PNJ est repoussé
   si le joueur le percute
 
+### Voiturette électrique (étape 5)
+- src/vehicles/Car.js : caisse + habitacle + 4 roues (qui tournent),
+  conduite arcade (W accélère, S frein/marche arrière, A/D tourne seulement
+  si ça roule), sol via heightAt, collisions bâtiments, limites du monde
+- Garée via nearestRoadPoint(spawn) = point de route OSM le plus proche
+- Touche E (front montant) pour entrer/sortir si proche (< interactDistance) ;
+  en voiture le joueur est caché et PlayerCamera.target = la voiture
+  (distance vehicle.cameraDistance) ; en sortant le joueur réapparaît à côté
+- Le joueur à pied ne traverse pas la voiture (resolveCircleVsCircle)
+- HUD : « E : prendre la voiturette » près de la voiture, « ZQSD = conduire » dedans
+
 ### Combat (pistolet, points de vie)
 - src/utils/Combat.js : fireHitscan (droite origine+direction vs cibles,
   rayon targetRadius, portée) — le tir joueur part de la CAMÉRA vers le viseur
@@ -216,6 +227,8 @@ src/world/, src/player/, src/vehicles/, src/npc/, src/utils/
 - src/utils/Input.js : clavier centralisé (event.code)
 - src/utils/Collisions.js : collisions cercle vs AABB (bâtiments) + cercle vs cercle
 - src/utils/Combat.js : tir hitscan (fireHitscan)
+- src/vehicles/Car.js : voiturette électrique (conduite arcade)
+- src/player/PlayerCamera.js : cible switchable (joueur <-> voiture)
 - src/utils/Humanoid.js : mesh humanoïde + pistolet (addGun)
 - src/player/Player.js : personnage à pied (physique arcade)
 - src/player/PlayerCamera.js : caméra 3e personne (orbite + lerp)
@@ -223,7 +236,7 @@ src/world/, src/player/, src/vehicles/, src/npc/, src/utils/
   policiers près du village via pickPoliceRoads)
 - src/utils/random.js : PRNG seeded partagé (végétation, PNJ)
 - src/utils/Humanoid.js : mesh humanoïde low-poly partagé (joueur + PNJ)
-- Dossier prévu mais pas encore créé : vehicles/
+- Dossier prévu mais pas encore créé : (aucun — vehicles/ existe) ; reste : bateaux (voilier, moteur, jetski) au port
 
 ### Règle de configuration
 - Tout paramètre réglable va dans CONFIG (src/config.js), regroupé par
