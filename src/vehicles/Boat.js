@@ -2,6 +2,7 @@ import * as THREE from 'three';
 
 import { CONFIG } from '../config.js';
 import { Input } from '../utils/Input.js';
+import { addOutline } from '../utils/Outline.js';
 import osmData from '../world/data/embiez-osm.js';
 
 // Bateau utilisable au port : voilier, bateau à moteur ou jetski (type).
@@ -50,7 +51,8 @@ export class Boat {
     this.speed = 0;
     this.group = new THREE.Group();
     this.createMesh();
-    this.group.position.set(dock.x, 0, dock.z); // flotte sur la mer (y = 0)
+    // Flotte sur la mer (un peu au-dessus du niveau 0)
+    this.group.position.set(dock.x, CONFIG.boat.floatHeight, dock.z);
     this.group.rotation.y = dock.yaw;
     scene.add(this.group);
   }
@@ -72,6 +74,10 @@ export class Boat {
     const mat = (color) => new THREE.MeshLambertMaterial({ color });
     const t = this.type;
 
+    // Coque dans un sous-groupe avec outline toon
+    this.hull = new THREE.Group();
+    this.group.add(this.hull);
+
     if (t === 'voilier') {
       // coque allongée + mât + voile (cône aplati)
       const coque = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.5, 4.2), mat(c.coque));
@@ -82,13 +88,13 @@ export class Boat {
       voile.scale.x = 0.18;
       voile.position.set(0.15, 2.0, 0.3);
       voile.rotation.z = 0.15;
-      this.group.add(coque, mat2, voile);
+      this.hull.add(coque, mat2, voile);
     } else if (t === 'moteur') {
       const coque = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.5, 3.2), mat(c.coqueMoteur));
       coque.position.y = 0.25;
       const cabine = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.6, 1.4), mat(c.coque));
       cabine.position.set(0, 0.8, -0.3);
-      this.group.add(coque, cabine);
+      this.hull.add(coque, cabine);
     } else {
       // jetski : coque basse + guidon
       const coque = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.35, 2.2), mat(c.jetski));
@@ -97,8 +103,9 @@ export class Boat {
       guidon.position.set(0, 0.55, 0.6);
       const mat2 = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.35, 6), mat(0x222222));
       mat2.position.set(0, 0.4, 0.6);
-      this.group.add(coque, guidon, mat2);
+      this.hull.add(coque, guidon, mat2);
     }
+    addOutline(this.hull, 1.08, CONFIG.props.outlineColor);
   }
 
   update(delta) {
@@ -130,7 +137,7 @@ export class Boat {
     } else {
       this.speed = 0; // la côte bloque le bateau
     }
-    this.pos.y = 0; // flotte sur la mer
+    this.pos.y = CONFIG.boat.floatHeight; // flotte au-dessus de la mer
 
     // --- Limites du monde ---
     const half = this.ground.size / 2 - 5;

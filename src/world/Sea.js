@@ -20,10 +20,9 @@ export class Sea {
     // On garde les positions d'origine pour animer les vagues
     this.basePositions = geometry.attributes.position.array.slice();
 
-    const material = new THREE.MeshLambertMaterial({
-      color: s.color,
-      flatShading: true, // facettes visibles = look low-poly
-    });
+    // MeshBasicMaterial : couleur unie vive sans éclairage (style toon),
+    // la mer ne paraît plus grise à l'abri du port
+    const material = new THREE.MeshBasicMaterial({ color: s.color });
     this.mesh = new THREE.Mesh(geometry, material);
     this.scene.add(this.mesh);
   }
@@ -44,6 +43,6 @@ export class Sea {
       positions.setY(i, (wave * 0.5) * s.waveHeight);
     }
     positions.needsUpdate = true;
-    this.mesh.geometry.computeVertexNormals(); // pour l'éclairage des facettes
+    // Pas de computeVertexNormals : matériau basic (couleur unie)
   }
 }

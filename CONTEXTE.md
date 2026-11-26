@@ -84,7 +84,15 @@ src/world/, src/player/, src/vehicles/, src/npc/, src/utils/
 - Tout en InstancedMesh : 3 draw calls pour les 160 bâtiments
 - Collisions : OBB orientées (resolveCollisions gère c.yaw, test dans le
   repère local puis retour monde)
-- À faire ensuite : outline/couleurs sur persos, voitures, bateaux, mer, ciel
+- Étendu ensuite à tout le jeu (toon) :
+  - Mer = MeshBasicMaterial couleur unie vive (sea.color 0x2fa8e8) -> plus
+    grise à l'abri du port ; plus de computeVertexNormals (inutile en basic)
+  - Ciel/brouillard bleu vif 0x55b8ff
+  - Outline noir sur persos (shells synchronisés avec l'animation de marche,
+    Humanoid.links), voiture et bateaux (addOutline dans src/utils/Outline.js)
+  - Couleurs vives : joueur vert 0x3aa03a, PNJ orange, voiture jaune,
+    bateaux blanc/bleu/orange
+  - Bateaux flottent à boat.floatHeight = 0.35 m (ne coulent plus)
 
 ### Données géographiques (île des Embiez)
 - Source : RGE ALTI 5 m de l'IGN, D083 (Var), livraison 2022-12-05, format ASC,
@@ -266,7 +274,8 @@ src/world/, src/player/, src/vehicles/, src/npc/, src/utils/
 - src/vehicles/Car.js : voiturette électrique (conduite arcade)
 - src/vehicles/Boat.js : voilier/moteur/jetski amarrés aux pontons
 - src/player/PlayerCamera.js : cible switchable (joueur <-> voiture)
-- src/utils/Humanoid.js : mesh humanoïde + pistolet (addGun)
+- src/utils/Humanoid.js : mesh humanoïde + outline synchronisé + pistolet
+- src/utils/Outline.js : addOutline (coquille noire BackSide) pour objets statiques
 - src/player/Player.js : personnage à pied (physique arcade)
 - src/player/PlayerCamera.js : caméra 3e personne (orbite + lerp)
 - Spawn au quai du port de l'île : player.spawn = (-3, -349), sol ~2 m,

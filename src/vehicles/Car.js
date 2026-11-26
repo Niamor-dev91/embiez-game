@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { CONFIG } from '../config.js';
 import { Input } from '../utils/Input.js';
 import { resolveCollisions } from '../utils/Collisions.js';
+import { addOutline } from '../utils/Outline.js';
 
 // Voiturette électrique low-poly (caisse + habitacle + 4 roues).
 // Conduite arcade : ZQSD (W = accélérer, S = frein/marche arrière,
@@ -31,6 +32,8 @@ export class Car {
 
   createMesh() {
     const v = CONFIG.vehicle;
+    // Carrosserie dans un sous-groupe, avec outline toon
+    this.hull = new THREE.Group();
     const body = new THREE.Mesh(
       new THREE.BoxGeometry(1.6, 0.5, 3),
       new THREE.MeshLambertMaterial({ color: v.bodyColor })
@@ -41,7 +44,9 @@ export class Car {
       new THREE.MeshLambertMaterial({ color: v.cabinColor })
     );
     cabin.position.set(0, 1.1, -0.2);
-    this.group.add(body, cabin);
+    this.hull.add(body, cabin);
+    addOutline(this.hull, 1.06, CONFIG.props.outlineColor);
+    this.group.add(this.hull);
 
     // 4 roues (cylindres couchés)
     this.wheels = [];

@@ -10,8 +10,8 @@ export const CONFIG = {
 
   // --- Ciel et brouillard ---
   sky: {
-    color: 0x87ceeb,         // bleu clair
-    fogNear: 200,            // distance où le brouillard commence
+    color: 0x55b8ff,         // bleu vif (style Wind Waker)
+    fogNear: 300,            // distance où le brouillard commence
     fogFar: 2500,            // distance où tout est noyé dans le brouillard
   },
 
@@ -33,7 +33,7 @@ export const CONFIG = {
 
   // --- Mer ---
   sea: {
-    color: 0x1e6fa8,
+    color: 0x2fa8e8,         // bleu vif uni (matériau basic, plus de gris au port)
     size: 4000,              // taille du plan (mètres) — doit dépasser le terrain
     segments: 40,            // subdivisions (peu = look low-poly)
     waveHeight: 0.25,        // amplitude des vagues
@@ -51,10 +51,10 @@ export const CONFIG = {
     jumpSpeed: 9,            // impulsion du saut (m/s)
     spawn: { x: -3, z: -349 }, // quai du port de l'île, à côté des pontons (y calé sur le sol)
     colors: {
-      body: 0x3a6fd8,
+      body: 0x3aa03a,        // vert vif (style Link)
       head: 0xd8a880,
       legs: 0x2a2a2a,
-      arms: 0x3a6fd8,
+      arms: 0x3aa03a,
     },
   },
 
@@ -71,8 +71,8 @@ export const CONFIG = {
 
   // --- Voiturette électrique ---
   vehicle: {
-    bodyColor: 0x3aa0d8,     // carrosserie
-    cabinColor: 0x9ad4ee,    // habitacle
+    bodyColor: 0xf0c020,     // carrosserie jaune vif
+    cabinColor: 0xfff0a0,    // habitacle
     wheelRadius: 0.35,
     radius: 1.3,             // rayon de collision de la voiture
     maxSpeed: 14,            // m/s en avant
@@ -98,12 +98,13 @@ export const CONFIG = {
     turnSpeed: 1.6,          // rad/s
     interactDistance: 3.5,   // distance max pour monter avec E
     cameraDistance: 9,
+    floatHeight: 0.35,       // hauteur de flottaison (le bateau ne coule pas)
     radius: { voilier: 2.5, moteur: 1.6, jetski: 1.1 }, // rayons de collision
     colors: {
-      coque: 0xe8e8e8,
-      voile: 0xf5f5f0,
-      coqueMoteur: 0x3aa0d8,
-      jetski: 0xd8a03a,
+      coque: 0xffffff,
+      voile: 0xfff8e0,
+      coqueMoteur: 0x2fa8e8,
+      jetski: 0xf08020,
       mat: 0x8a6a4a,
     },
   },
@@ -134,10 +135,10 @@ export const CONFIG = {
     walkSpeed: 2,            // mètres par seconde
     radius: 0.35,            // rayon de collision
     colors: {
-      body: 0xd86a3a,
+      body: 0xe8a03a,        // orange vif
       head: 0xd8a880,
       legs: 0x3a3a3a,
-      arms: 0xd86a3a,
+      arms: 0xe8a03a,
     },
     policeColors: {          // look du policier : bleu foncé
       body: 0x1a2a6a,
@@ -160,7 +161,7 @@ export const CONFIG = {
     outlineColor: 0x101018,    // contour noir "toon"
     outlineScale: 1.06,        // la coquille noire dépasse de 6 %
     rockColor: 0x8a8a8a,
-    surfaceColors: { default: 0x777777, pitch: 0x4a7c3a, parking: 0x666666, swimming_pool: 0x3aa0c8, beach: 0xc2b280, marina: 0x666666 },
+    surfaceColors: { default: 0x777777, pitch: 0x4a7c3a, parking: 0x666666, swimming_pool: 0x3aa0c8, beach: 0xc2b280, marina: 0x2fa8e8 /* bassin du port en bleu mer, pas gris */ },
     treeDensity: 1 / 120,      // pins par m² dans les forêts OSM
     treeMax: 500,              // plafond de pins procéduraux
     trunkColor: 0x6a4a2a,
