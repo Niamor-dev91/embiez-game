@@ -83,7 +83,9 @@ src/world/, src/player/, src/vehicles/, src/npc/, src/utils/
 - Toit = pyramide à 4 pans rouge vif (ConeGeometry 4 pans, props.roofColor)
 - Tout en InstancedMesh : 3 draw calls pour les 160 bâtiments
 - Collisions : OBB orientées (resolveCollisions gère c.yaw, test dans le
-  repère local puis retour monde)
+  repère local puis retour monde, convention three.js : local = R(-yaw)·monde,
+  retour monde = R(+yaw)·local — signe opposé à l'avant, les colliders
+  suivaient l'ancien axe axis-aligned)
 - Étendu ensuite à tout le jeu (toon) :
   - Mer = MeshBasicMaterial couleur unie vive (sea.color 0x2fa8e8) -> plus
     grise à l'abri du port ; plus de computeVertexNormals (inutile en basic)
@@ -227,9 +229,10 @@ src/world/, src/player/, src/vehicles/, src/npc/, src/utils/
 - HUD : #hud affiche les PV (index.html), viseur #crosshair au centre
 
 ### Collisions
-- src/utils/Collisions.js : cercle (position + rayon) contre les AABB des
-  bâtiments (buildColliders depuis Buildings.colliders ;
-  resolveCollisions pousse sur l'axe de pénétration minimale, 2 passes)
+- src/utils/Collisions.js : cercle (position + rayon) contre les OBB des
+  bâtiments (buildColliders depuis Buildings.colliders, yaw conservé ;
+  resolveCollisions pousse sur l'axe local de pénétration minimale,
+  2 passes, rotation monde<->local selon le yaw réel du bâtiment)
 - Le joueur a un rayon (player.radius = 0.35 m) ; le module est réutilisable
   tel quel pour les futurs PNJ et véhicules
 - resolveCircleVsCircle(A, rA, B, rB) : pousse A hors de B (A cède) —

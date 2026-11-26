@@ -1,10 +1,9 @@
 // Collisions simples pour le personnage, les futurs PNJ et véhicules :
-// un cercle (position + rayon) contre les boîtes alignées axes des bâtiments.
-// Les bâtiments OSM sont des rectangles axis-aligned -> test AABB.
+// un cercle (position + rayon) contre les boîtes orientées des bâtiments (OBB).
 
 // Construit la liste des colliders depuis les bâtiments posés
 export function buildColliders(buildings) {
-  return buildings.map((b) => ({ cx: b.cx, cz: b.cz, w: b.w, d: b.d }));
+  return buildings.map((b) => ({ cx: b.cx, cz: b.cz, w: b.w, d: b.d, yaw: b.yaw }));
 }
 
 // Pousse le cercle A hors du cercle B (A cède, B a la priorité).
@@ -32,11 +31,11 @@ export function resolveCollisions(pos, radius, colliders) {
       const yaw = c.yaw || 0;
       const cosY = Math.cos(yaw);
       const sinY = Math.sin(yaw);
-      // point dans le repère local du bâtiment (rotation -yaw)
+      // point dans le repère local du bâtiment (rotation -yaw, convention three.js)
       const dxm = pos.x - c.cx;
       const dzm = pos.z - c.cz;
-      const lx = dxm * cosY + dzm * sinY;
-      const lz = -dxm * sinY + dzm * cosY;
+      const lx = dxm * cosY - dzm * sinY;
+      const lz = dxm * sinY + dzm * cosY;
       const hw = c.w / 2 + radius;
       const hd = c.d / 2 + radius;
       if (Math.abs(lx) >= hw || Math.abs(lz) >= hd) continue;
@@ -48,9 +47,9 @@ export function resolveCollisions(pos, radius, colliders) {
       let pushZ = 0;
       if (px < pz) pushX = lx >= 0 ? px : -px;
       else pushZ = lz >= 0 ? pz : -pz;
-      // retour dans le repère monde (rotation +yaw)
-      pos.x += pushX * cosY - pushZ * sinY;
-      pos.z += pushX * sinY + pushZ * cosY;
+      // retour dans le repère monde (rotation +yaw, convention three.js)
+      pos.x += pushX * cosY + pushZ * sinY;
+      pos.z += -pushX * sinY + pushZ * cosY;
     }
   }
   return hit;
