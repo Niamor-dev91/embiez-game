@@ -4,8 +4,9 @@ import { CONFIG } from '../config.js';
 import osmData from './data/embiez-osm.js';
 
 // Routes, pontons et surfaces au sol (parkings, plages, terrains de sport...) :
-// des rubans et polygones plats posés sur le terrain via terrain.heightAt.
-// Un seul mesh par catégorie, couleurs par vertex.
+// - ROUTES : peintes directement dans la texture du terrain (terrain.paintStroke)
+//   -> plus de ruban 3D au-dessus du sol, collées au sol par construction
+// - PONTONS et SURFACES : objets 3D plats posés sur le terrain via heightAt
 
 export class Roads {
 
@@ -76,25 +77,13 @@ export class Roads {
 
   createRoads() {
     const p = CONFIG.props;
-    const positions = [];
-    const colors = [];
-    const indices = [];
-    const roadColor = new THREE.Color(p.roadColor);
-    const pathColor = new THREE.Color(p.pathColor);
     for (const road of osmData.roads) {
       const width = p.roadWidth[road.kind] ?? 3;
       // Les petites allées en clair, les routes goudronnées en gris
-      const color = ['footway', 'path', 'steps', 'pedestrian'].includes(road.kind) && !road.area
-        ? pathColor : roadColor;
-      for (let i = 0; i < road.points.length - 1; i++) {
-        const p0 = road.points[i];
-        const p1 = road.points[i + 1];
-        const y0 = this.terrain.heightAt(p0[0], p0[1]) + 0.07;
-        const y1 = this.terrain.heightAt(p1[0], p1[1]) + 0.07;
-        this.addSegment(positions, colors, indices, p0, p1, width, color, y0, y1);
-      }
+      const colorHex = ['footway', 'path', 'steps', 'pedestrian'].includes(road.kind) && !road.area
+        ? p.pathColor : p.roadColor;
+      this.terrain.paintStroke(road.points, width, colorHex);
     }
-    this.buildMesh(positions, colors, indices);
   }
 
   createPiers() {
@@ -118,6 +107,10 @@ export class Roads {
     const colors = [];
     const indices = [];
     for (const surf of osmData.surfaces) {
+      // marina ignorée : le bassin du port est couvert par le plan mer (bleu
+      // uni partout) — un mesh par-dessus créait un port plus foncé (Lambert)
+      // + une fine bande bleue au bord là où le plan mer ondule au-dessus.
+      if (surf.kind === 'marina') continue;
       const pts = surf.points;
       const { cx, cz } = centroid(pts);
       const color = new THREE.Color(p.surfaceColors[surf.kind] ?? p.surfaceColors.default);

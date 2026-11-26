@@ -13,6 +13,7 @@ export class Terrain {
   constructor(scene) {
     this.scene = scene;
     this.loadData();
+    this.createPaintCanvas();
     this.createMesh();
   }
 
@@ -57,13 +58,124 @@ export class Terrain {
     );
   }
 
-  // Couleur du sol selon l'altitude
+  // Couleur du sol selon l'altitude : sable dès le bord de mer (y compris
+  // sous l'eau, caché par la mer opaque -> jamais de bleu visible sur terre),
+  // herbe, puis végétation haute en altitude (jamais de gris hors routes).
+  // Les changements de zone se font en DÉGRADÉ sur colorBlendWidth (8 m)
+  // centré sur chaque seuil -> pas de cassure entre deux zones du sol.
   colorAt(y) {
     const c = CONFIG.terrain;
-    if (y < this.coastLevel) return new THREE.Color(c.colors.seabed);
-    if (y < c.beachHeight) return new THREE.Color(c.colors.sand);
-    if (y < c.rockHeight) return new THREE.Color(c.colors.grass);
-    return new THREE.Color(c.colors.rock);
+    const sand = new THREE.Color(c.colors.sand);
+    const grass = new THREE.Color(c.colors.grass);
+    const rock = new THREE.Color(c.colors.rock);
+    const w = c.colorBlendWidth / 2;
+    if (y < c.beachHeight - w) return sand;
+    if (y < c.beachHeight + w) return sand.clone().lerp(grass, (y - (c.beachHeight - w)) / (2 * w));
+    if (y < c.rockHeight - w) return grass;
+    if (y < c.rockHeight + w) return grass.clone().lerp(rock, (y - (c.rockHeight - w)) / (2 * w));
+    return rock;
+  }
+
+  // --- Texture du sol : le FOND recopie exactement l'ancien rendu
+  // (vertexColors interpolés bilinéairement sur la grille du mesh), puis on
+  // peint par-dessus UNIQUEMENT les routes (paintStroke, appelé par Roads). ---
+  createPaintCanvas() {
+    const c = CONFIG.terrain;
+    const res = c.paintResolution;
+    this.paintCanvas = document.createElement('canvas');
+    this.paintCanvas.width = res;
+    this.paintCanvas.height = res;
+    const ctx = this.paintCanvas.getContext('2d');
+
+    // Couleurs aux nœuds de la grille du mesh (comme les anciens vertexColors)
+    const cell = this.size / c.segments;
+    const n = c.segments + 1;
+    const nodes = [];
+    for (let r = 0; r < n; r++) {
+      nodes.push([]);
+      for (let col = 0; col < n; col++) {
+        nodes[r].push(this.colorAt(this.heightAt(-this.size / 2 + col * cell, -this.size / 2 + r * cell)));
+      }
+    }
+
+    // Fond peint pixel par pixel avec la MÊME interpolation bilinéaire
+    const img = ctx.createImageData(res, res);
+    const d = img.data;
+    for (let py = 0; py < res; py++) {
+      for (let px = 0; px < res; px++) {
+        const [x, z] = this.paintToWorld(px, py);
+        const col = (x + this.size / 2) / cell;
+        const row = (z + this.size / 2) / cell;
+        const c0 = Math.max(0, Math.min(c.segments - 1, Math.floor(col)));
+        const r0 = Math.max(0, Math.min(c.segments - 1, Math.floor(row)));
+        const fc = Math.max(0, Math.min(1, col - c0));
+        const fr = Math.max(0, Math.min(1, row - r0));
+        const c00 = nodes[r0][c0], c10 = nodes[r0][c0 + 1];
+        const c01 = nodes[r0 + 1][c0], c11 = nodes[r0 + 1][c0 + 1];
+        const k = (py * res + px) * 4;
+        d[k]     = (c00.r * (1 - fc) * (1 - fr) + c10.r * fc * (1 - fr) + c01.r * (1 - fc) * fr + c11.r * fc * fr) * 255;
+        d[k + 1] = (c00.g * (1 - fc) * (1 - fr) + c10.g * fc * (1 - fr) + c01.g * (1 - fc) * fr + c11.g * fc * fr) * 255;
+        d[k + 2] = (c00.b * (1 - fc) * (1 - fr) + c10.b * fc * (1 - fr) + c01.b * (1 - fc) * fr + c11.b * fc * fr) * 255;
+        d[k + 3] = 255;
+      }
+    }
+    ctx.putImageData(img, 0, 0);
+
+    this.paintTexture = new THREE.CanvasTexture(this.paintCanvas);
+    // NoColorSpace (défaut) : la texture est utilisée telle quelle, comme les
+    // anciens vertexColors -> mêmes couleurs à l'affichage qu'avant.
+    this.paintTexture.anisotropy = 4;
+  }
+
+  // Monde -> pixel dans le canvas de peinture
+  worldToPaint(x, z) {
+    const res = this.paintCanvas.width;
+    return [
+      ((x + this.size / 2) / this.size) * res,
+      res - ((z + this.size / 2) / this.size) * res, // flipY de la texture
+    ];
+  }
+
+  // Pixel -> monde (inverse de worldToPaint)
+  paintToWorld(px, py) {
+    const res = this.paintCanvas.width;
+    return [
+      (px / res) * this.size - this.size / 2,
+      (1 - py / res) * this.size - this.size / 2,
+    ];
+  }
+
+  // Peint une route dans la texture du sol (lineJoin/lineCap round :
+  // les virages sont bouchés automatiquement, aucun ruban 3D au-dessus).
+  // Deux passes : un halo semi-transparent (bord adouci, moins pixelisé)
+  // puis le trait plein.
+  paintStroke(points, widthM, colorHex) {
+    const ctx = this.paintCanvas.getContext('2d');
+    const res = this.paintCanvas.width;
+    const color = '#' + new THREE.Color(colorHex).getHexString();
+    const w = Math.max(1, (widthM / this.size) * res);
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    const trace = () => {
+      ctx.beginPath();
+      points.forEach(([x, z], i) => {
+        const [px, py] = this.worldToPaint(x, z);
+        if (i === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      });
+      ctx.stroke();
+    };
+    // halo adouci autour du trait
+    ctx.strokeStyle = color;
+    ctx.globalAlpha = 0.45;
+    ctx.lineWidth = w + 2.5;
+    trace();
+    // trait plein
+    ctx.globalAlpha = 1;
+    ctx.lineWidth = w;
+    trace();
+    ctx.globalAlpha = 1;
+    this.paintTexture.needsUpdate = true;
   }
 
   createMesh() {
@@ -72,27 +184,14 @@ export class Terrain {
     geometry.rotateX(-Math.PI / 2); // à plat
 
     const positions = geometry.attributes.position;
-    const colors = new Float32Array(positions.count * 3);
-    const color = new THREE.Color();
-
     for (let i = 0; i < positions.count; i++) {
-      const x = positions.getX(i);
-      const z = positions.getZ(i);
-      const y = this.heightAt(x, z);
-      positions.setY(i, y);
-
-      color.copy(this.colorAt(y));
-      colors[i * 3] = color.r;
-      colors[i * 3 + 1] = color.g;
-      colors[i * 3 + 2] = color.b;
+      positions.setY(i, this.heightAt(positions.getX(i), positions.getZ(i)));
     }
-
-    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
     geometry.computeVertexNormals();
 
     const material = new THREE.MeshLambertMaterial({
-      vertexColors: true,
-      flatShading: true, // facettes visibles = look low-poly
+      map: this.paintTexture, // fond = ancien rendu vertexColors + routes peintes
+      flatShading: true,     // facettes visibles = look low-poly
     });
     this.mesh = new THREE.Mesh(geometry, material);
     this.scene.add(this.mesh);

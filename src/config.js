@@ -175,14 +175,16 @@ export const CONFIG = {
   terrain: {
     size: 2000,              // plan carré centré sur l'île (mètres)
     segments: 200,           // subdivisions du mesh (résolution 10 m)
-    beachHeight: 1.5,        // altitude max considérée comme plage (mètres)
-    rockHeight: 15,          // altitude à partir de laquelle c'est de la roche
+    paintResolution: 4096,   // texture du sol (fond recopié + routes peintes) : 1 px ~ 0.5 m
+    beachHeight: 3,          // altitude max considérée comme plage (mètres) : sable dès le bord de mer
+    rockHeight: 15,          // altitude à partir de laquelle c'est de la végétation haute
+    colorBlendWidth: 8,      // largeur du dégradé entre deux zones de couleur du sol (m)
     waterDepth: 6,           // profondeur des fonds marins hors données (mètres)
     colors: {
-      sand: 0xc2b280,        // plage
-      grass: 0x5d8a4a,       // végétation basse
-      rock: 0x8a8a8a,        // hauteurs
-      seabed: 0x3a6a8a,      // fonds marins
+      sand: 0xecd9a0,        // plage (sable clair, façon Wind Waker) — aussi sous l'eau (caché par la mer opaque)
+      grass: 0x7cc24f,       // herbe vert clair vif
+      rock: 0x4e9e3e,        // hauteurs = vert soutenu (PAS de gris hors routes)
+      seabed: 0x4fb0d8,      // fonds marins (sous la mer opaque, donc jamais visible)
     },
   },
 };

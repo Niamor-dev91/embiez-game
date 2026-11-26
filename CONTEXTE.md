@@ -137,8 +137,22 @@ src/world/, src/player/, src/vehicles/, src/npc/, src/utils/
   bâtiments (avec hauteur depuis tags height/building:levels), forêts,
   arbres, pontons, surfaces (pitch/parking/pool/beach), rochers
 - Le décor est instancié en low-poly, posé sur le terrain via heightAt :
-  - src/world/Roads.js : routes = rubans plats (largeur selon le type),
-    pontons = rubans bois à y = 0.35, surfaces = polygones plats colorés
+  - src/world/Terrain.js : texture du sol peinte (terrain.paintResolution =
+    4096, ~0.5 m/px, NoColorSpace comme les anciens vertexColors) : le FOND
+    recopie l'ancien rendu (interpolation bilinéaire des couleurs WW sur la
+    grille du mesh : sable 0xecd9a0 sous beachHeight = 3 m — donc aussi sous
+    l'eau, jamais de bleu visible sur terre ; herbe 0x7cc24f ; vert soutenu
+    0x4e9e3e au-dessus de rockHeight, jamais de gris hors routes ; les
+    changements de zone se font en DÉGRADÉ sur terrain.colorBlendWidth = 8 m
+    centré sur chaque seuil), puis SEULES
+    les routes sont peintes par-dessus
+    (paintStroke en 2 passes : halo alpha 0.45 + trait plein, lineJoin/lineCap
+    round -> bords adoucis, virages bouchés, aucun ruban 3D au-dessus du sol)
+  - src/world/Roads.js : routes = peinture (createRoads) ; pontons = rubans
+    bois mesh à y = 0.35 ; surfaces =
+    polygones plats mesh colorés, SAUF marina (ignorée : le port est couvert
+    par le plan mer bleu uni — un mesh marina créait un port plus foncé et
+    une fine bande bleue au bord)
   - src/world/Buildings.js : bâtiments = boîte + toit (matériau array,
     groupe +Y = toit), rochers = icosaèdres aplatis
   - src/world/Vegetation.js : pins (tronc + 2 cônes en InstancedMesh)
