@@ -83,6 +83,8 @@ export const CONFIG = {
     turnSpeed: 2.2,          // rad/s (à pleine vitesse)
     cameraDistance: 8,       // distance de la caméra en mode voiture
     interactDistance: 3,     // distance max pour entrer avec E
+    waterPanneTime: 3,        // secondes dans l'eau avant la panne (s)
+    npcHitCooldown: 1,       // secondes entre deux pertes de PV (voiture vs PNJ)
   },
 
   // --- Combat (pistolet, points de vie) ---

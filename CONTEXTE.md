@@ -163,6 +163,10 @@ src/world/, src/player/, src/vehicles/, src/npc/, src/utils/
   en voiture le joueur est caché et PlayerCamera.target = la voiture
   (distance vehicle.cameraDistance) ; en sortant le joueur réapparaît à côté
 - Le joueur à pied ne traverse pas la voiture (resolveCircleVsCircle)
+- Collisions voiture <-> PNJ (dans Game) : -1 PV au PNJ avec cooldown
+  (vehicle.npcHitCooldown = 1 s), le PNJ est écarté et fuit/meurt normalement
+- Panne : si la voiture reste plus de vehicle.waterPanneTime (3 s) dans l'eau
+  (heightAt < 0), elle est en panne (broken) : speed = 0, HUD « PANNE ! »
 - HUD : « E : prendre la voiturette » près de la voiture, « ZQSD = conduire » dedans
 
 ### Combat (pistolet, points de vie)

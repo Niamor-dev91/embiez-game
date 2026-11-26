@@ -111,6 +111,7 @@ export class Npc {
     this.state = 'walk'; // 'walk' | 'flee' | 'dead'
     this.alerted = false; // policier : attaque le joueur
     this.fireTimer = CONFIG.combat.policeFireInterval;
+    this.carHitCooldown = 0; // anti-dégâts répétés quand la voiture reste dessus
     this.segIndex = 0;
     this.dir = 1;
     this.t = 0;
@@ -174,6 +175,7 @@ export class Npc {
     const p = CONFIG.npc;
     const c = CONFIG.combat;
     const pos = this.group.position;
+    this.carHitCooldown = Math.max(0, this.carHitCooldown - delta);
 
     if (this.state === 'flee' && player) {
       // --- Fuite : s'éloigne du joueur ---

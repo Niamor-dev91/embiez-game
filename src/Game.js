@@ -184,6 +184,26 @@ export class Game {
 
       if (this.inCar) {
         this.car.update(delta);
+        // Collisions voiture <-> PNJ : -1 PV au PNJ (avec cooldown) et on l'écarte
+        for (const npc of this.npcs) {
+          if (npc.hp <= 0) continue;
+          const d = Math.hypot(
+            npc.group.position.x - this.car.pos.x,
+            npc.group.position.z - this.car.pos.z
+          );
+          if (d < CONFIG.vehicle.radius + CONFIG.npc.radius) {
+            if (npc.carHitCooldown <= 0) {
+              npc.takeDamage(CONFIG.combat.damagePerShot, this.car.pos);
+              npc.carHitCooldown = CONFIG.vehicle.npcHitCooldown;
+            }
+            resolveCircleVsCircle(
+              npc.group.position,
+              CONFIG.npc.radius,
+              this.car.pos,
+              CONFIG.vehicle.radius
+            );
+          }
+        }
       } else if (this.player.alive) {
         this.player.update(delta, this.playerCamera.yaw);
         // Le joueur ne traverse pas la voiturette
@@ -207,7 +227,9 @@ export class Game {
     } else {
       txt = 'PV : ' + this.player.hp + '/' + CONFIG.combat.playerHp + '   |   clic ou F = tirer';
       if (this.inCar) {
-        txt += '   |   ZQSD = conduire, E = sortir';
+        txt += this.car.broken
+          ? "   |   PANNE ! (trop longtemps dans l'eau)   |   E = sortir"
+          : '   |   ZQSD = conduire, E = sortir';
       } else {
         const d = Math.hypot(
           this.player.group.position.x - this.car.pos.x,

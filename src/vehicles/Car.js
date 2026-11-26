@@ -16,6 +16,8 @@ export class Car {
     this.terrain = terrain;
     this.colliders = colliders;
     this.speed = 0;
+    this.waterTime = 0;  // temps cumulé dans l'eau
+    this.broken = false; // panne (après waterPanneTime secondes dans l'eau)
     this.group = new THREE.Group();
     this.createMesh();
     this.group.position.set(park.x, terrain.heightAt(park.x, park.z), park.z);
@@ -56,27 +58,40 @@ export class Car {
 
   update(delta) {
     const v = CONFIG.vehicle;
+    const groundY = this.terrain.heightAt(this.pos.x, this.pos.z);
 
-    // --- Accélération / frein ---
-    let throttle = 0;
-    if (Input.isDown('KeyW')) throttle += 1;
-    if (Input.isDown('KeyS')) throttle -= 1;
-    if (throttle > 0) this.speed += v.acceleration * delta;
-    else if (throttle < 0) this.speed -= v.brake * delta;
-    else this.speed -= Math.sign(this.speed) * Math.min(Math.abs(this.speed), v.friction * delta);
-    this.speed = Math.max(-v.maxReverseSpeed, Math.min(v.maxSpeed, this.speed));
+    // --- Panne si la voiture reste trop longtemps dans l'eau ---
+    if (groundY < 0) {
+      this.waterTime += delta;
+      if (this.waterTime > v.waterPanneTime) this.broken = true;
+    } else {
+      this.waterTime = 0;
+    }
 
-    // --- Direction : on ne tourne que si la voiture roule ---
-    let steer = 0;
-    if (Input.isDown('KeyA')) steer += 1;
-    if (Input.isDown('KeyD')) steer -= 1;
-    const roll = Math.min(1, Math.abs(this.speed) / 3) * Math.sign(this.speed || 1);
-    this.group.rotation.y += steer * v.turnSpeed * delta * roll;
+    if (!this.broken) {
+      // --- Accélération / frein ---
+      let throttle = 0;
+      if (Input.isDown('KeyW')) throttle += 1;
+      if (Input.isDown('KeyS')) throttle -= 1;
+      if (throttle > 0) this.speed += v.acceleration * delta;
+      else if (throttle < 0) this.speed -= v.brake * delta;
+      else this.speed -= Math.sign(this.speed) * Math.min(Math.abs(this.speed), v.friction * delta);
+      this.speed = Math.max(-v.maxReverseSpeed, Math.min(v.maxSpeed, this.speed));
 
-    // --- Déplacement ---
-    const yaw = this.group.rotation.y;
-    this.pos.x += Math.sin(yaw) * this.speed * delta;
-    this.pos.z += Math.cos(yaw) * this.speed * delta;
+      // --- Direction : on ne tourne que si la voiture roule ---
+      let steer = 0;
+      if (Input.isDown('KeyA')) steer += 1;
+      if (Input.isDown('KeyD')) steer -= 1;
+      const roll = Math.min(1, Math.abs(this.speed) / 3) * Math.sign(this.speed || 1);
+      this.group.rotation.y += steer * v.turnSpeed * delta * roll;
+
+      // --- Déplacement ---
+      const yaw = this.group.rotation.y;
+      this.pos.x += Math.sin(yaw) * this.speed * delta;
+      this.pos.z += Math.cos(yaw) * this.speed * delta;
+    } else {
+      this.speed = 0; // en panne : la voiture ne roule plus
+    }
 
     // --- Limites du monde + collisions bâtiments ---
     const half = this.terrain.size / 2 - 2;
@@ -84,8 +99,8 @@ export class Car {
     this.pos.z = Math.max(-half, Math.min(half, this.pos.z));
     resolveCollisions(this.pos, v.radius, this.colliders);
 
-    // --- Sur le terrain ---
-    this.pos.y = this.terrain.heightAt(this.pos.x, this.pos.z);
+    // --- Sur le terrain (dans l'eau elle coule sous le niveau de la mer) ---
+    this.pos.y = groundY;
 
     // --- Roues qui tournent ---
     for (const w of this.wheels) w.rotation.x += (this.speed * delta) / v.wheelRadius;
