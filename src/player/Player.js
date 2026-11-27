@@ -33,7 +33,7 @@ export class Player {
   createMesh() {
     // Mesh humanoïde partagé avec les PNJ (src/utils/Humanoid.js).
     // En FPS le joueur est caché : son arme est le view model Revolver.
-    this.humanoid = createHumanoid(CONFIG.player.colors);
+    this.humanoid = createHumanoid(null, 0); // variante XIII n°0 (le joueur est caché en FPS de toute façon)
     this.group = this.humanoid.group;
   }
 

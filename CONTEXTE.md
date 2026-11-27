@@ -196,7 +196,10 @@ src/world/, src/player/, src/vehicles/, src/npc/, src/utils/
   aux extrémités, posé sur le terrain (heightAt), bloqué par les bâtiments
 - src/utils/random.js : PRNG seeded (mulberry32), partagé végétation/PNJ
 - Mesh humanoïde partagé avec le joueur : src/utils/Humanoid.js
-  (createHumanoid + setWalkAnimation)
+  (createHumanoid + setWalkAnimation), style XIII comic toon : outline noir,
+  3 variations de civils (npc.variants : 2 hommes + 1 femme avec cheveux
+  longs, jupe et taille fine) + yeux noirs ; chaque civil prend
+  variant = seed % 3, les policiers gardent leur look bleu foncé
 - Game instancie CONFIG.npc.count PNJ (40 par défaut), chacun sur un chemin
   différent avec un départ aléatoire ; update dans les deux modes
   (player/debug), avec le joueur passé en paramètre : le PNJ est repoussé

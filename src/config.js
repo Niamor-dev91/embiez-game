@@ -50,12 +50,6 @@ export const CONFIG = {
     gravity: 25,             // mètres par seconde carrée
     jumpSpeed: 9,            // impulsion du saut (m/s)
     spawn: { x: -3, z: -349 }, // quai du port de l'île, à côté des pontons (y calé sur le sol)
-    colors: {
-      body: 0x3aa03a,        // vert vif (style Link)
-      head: 0xd8a880,
-      legs: 0x2a2a2a,
-      arms: 0x3aa03a,
-    },
   },
 
   // --- Caméra du joueur (3e personne, orbite autour du perso) ---
@@ -151,12 +145,13 @@ export const CONFIG = {
     count: 40,               // nombre de PNJ (chacun sur un chemin différent)
     walkSpeed: 2,            // mètres par seconde
     radius: 0.35,            // rayon de collision
-    colors: {
-      body: 0xe8a03a,        // orange vif
-      head: 0xd8a880,
-      legs: 0x3a3a3a,
-      arms: 0xe8a03a,
-    },
+    // 3 variations de civils (style XIII : couleurs vives + outline noir),
+    // la n°2 est une femme (cheveux longs + jupe)
+    variants: [
+      { style: 'man',   hair: 0x1a1a1a, skin: 0xd8a880, top: 0xe8a03a, legs: 0x3a3a3a },
+      { style: 'man',   hair: 0xc8a040, skin: 0xe0b090, top: 0x3a9a5a, legs: 0x4a3a2a },
+      { style: 'woman', hair: 0x5a3a1a, skin: 0xd8a880, top: 0xd84a8a, legs: 0xd8c8b8, skirt: 0x8a2a5a },
+    ],
     policeColors: {          // look du policier : bleu foncé
       body: 0x1a2a6a,
       head: 0xd8a880,

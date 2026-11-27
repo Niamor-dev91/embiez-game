@@ -136,8 +136,11 @@ export class Npc {
     this.dir = rand() < 0.5 ? 1 : -1;
     if (this.dir === -1 && this.segIndex === 0) this.segIndex = 1; // éviter points[-1]
 
-    // Le policier a un look bleu foncé distinct
-    this.humanoid = createHumanoid(isPolice ? CONFIG.npc.policeColors : CONFIG.npc.colors);
+    // Policier = look bleu foncé distinct ; civil = une des 3 variations
+    // (seed % 3, la n°2 est une femme) façon XIII
+    this.humanoid = isPolice
+      ? createHumanoid(CONFIG.npc.policeColors)
+      : createHumanoid(null, seed % CONFIG.npc.variants.length);
     this.group = this.humanoid.group;
     if (isPolice) addGun(this.humanoid, CONFIG.combat.gunColor); // pistolet visible
     const a = this.road.points[this.segIndex];
