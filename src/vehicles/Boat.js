@@ -108,13 +108,13 @@ export class Boat {
     addOutline(this.hull, 1.08, CONFIG.props.outlineColor);
   }
 
-  update(delta) {
+  update(delta, alive = true) {
     const v = CONFIG.boat;
 
-    // --- Accélération / frein (comme la voiture) ---
+    // --- Accélération / frein (comme la voiture) ; joueur KO = plus de conduite ---
     let throttle = 0;
-    if (Input.isDown('KeyW')) throttle += 1;
-    if (Input.isDown('KeyS')) throttle -= 1;
+    if (alive && Input.isDown('KeyW')) throttle += 1;
+    if (alive && Input.isDown('KeyS')) throttle -= 1;
     if (throttle > 0) this.speed += v.acceleration * delta;
     else if (throttle < 0) this.speed -= v.brake * delta;
     else this.speed -= Math.sign(this.speed) * Math.min(Math.abs(this.speed), v.friction * delta);
@@ -122,8 +122,8 @@ export class Boat {
 
     // --- Direction ---
     let steer = 0;
-    if (Input.isDown('KeyA')) steer += 1;
-    if (Input.isDown('KeyD')) steer -= 1;
+    if (alive && Input.isDown('KeyA')) steer += 1;
+    if (alive && Input.isDown('KeyD')) steer -= 1;
     const roll = Math.min(1, Math.abs(this.speed) / 2) * Math.sign(this.speed || 1);
     this.group.rotation.y += steer * v.turnSpeed * delta * roll;
 

@@ -363,7 +363,7 @@ export class Game {
       this.eHeld = eDown;
 
       if (this.vehicle) {
-        this.vehicle.update(delta);
+        this.vehicle.update(delta, this.player.alive); // joueur KO = on ne conduit plus
         // En voiture : collisions avec les PNJ (-1 PV, cooldown, on les écarte)
         if (this.vehicle === this.car) {
           for (const npc of this.npcs) {
@@ -419,8 +419,11 @@ export class Game {
   // HUD : points de vie du joueur + infos (en haut à gauche)
   updateHud() {
     let txt;
+    if (this.touch && this.touch.setRespawnVisible) this.touch.setRespawnVisible(!this.player.alive);
     if (!this.player.alive) {
-      txt = 'KO ! Appuie sur R pour réapparaître';
+      txt = this.touch && this.touch.active
+        ? 'KO ! Touche le bouton R pour réapparaître'
+        : 'KO ! Appuie sur R pour réapparaître';
     } else {
       const ammoTxt = this.revolver.isReloading
         ? 'RECHARGEMENT…'

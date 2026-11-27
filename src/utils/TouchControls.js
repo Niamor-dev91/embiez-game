@@ -30,6 +30,7 @@ export class TouchControls {
     this.buildButton('btn-jump', 'Space');
     this.buildButton('btn-run', 'ShiftLeft');
     this.buildButton('btn-use', 'KeyE');
+    this.buildButton('btn-respawn', 'KeyR'); // affiché seulement quand le joueur est KO
 
     // Glisser sur le canvas (pas sur un bouton) = regarder autour
     window.addEventListener('touchmove', (e) => {
@@ -55,6 +56,12 @@ export class TouchControls {
         if (t.identifier === this.lookTouch) this.lookTouch = null;
       }
     });
+  }
+
+  // Bouton R (respawn) visible uniquement quand le joueur est KO
+  setRespawnVisible(visible) {
+    const el = document.getElementById('btn-respawn');
+    if (el) el.style.display = visible ? 'flex' : 'none';
   }
 
   press(code) {

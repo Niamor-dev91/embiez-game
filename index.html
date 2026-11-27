@@ -104,6 +104,13 @@
       #btn-jump { right: 124px; bottom: 24px; width: 64px; height: 64px; }
       #btn-run  { right: 24px; bottom: 200px; width: 56px; height: 56px; }
       #btn-use  { right: 196px; bottom: 110px; width: 56px; height: 56px; }
+      /* Bouton R (respawn) : caché par défaut, affiché au KO (voir TouchControls.setRespawnVisible) */
+      #btn-respawn {
+        left: 50%; top: 38%; transform: translate(-50%, -50%);
+        width: 80px; height: 80px; font-size: 24px;
+        background: rgba(216, 74, 42, 0.45);
+        display: none;
+      }
     </style>
   </head>
   <body>
@@ -117,6 +124,7 @@
       <div class="tbtn" id="btn-jump">SAUT</div>
       <div class="tbtn" id="btn-run">COURIR</div>
       <div class="tbtn" id="btn-use">E</div>
+      <div class="tbtn" id="btn-respawn">R</div>
     </div>
     <script type="module" src="/src/main.js"></script>
   </body>

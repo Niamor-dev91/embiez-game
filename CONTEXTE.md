@@ -52,6 +52,7 @@ src/world/, src/player/, src/vehicles/, src/npc/, src/utils/
 - Tactile (smartphone) : src/utils/TouchControls.js, activé si 'ontouchstart' /
   maxTouchPoints > 0. Joystick virtuel à gauche -> faux keydown/keyup ZQSD dans
   Input ; boutons à droite : TIR (mousedown), SAUT (Space), COURIR (Shift), E ;
+  bouton R (respawn, #btn-respawn) affiché seulement au KO via setRespawnVisible ;
   glisser le doigt sur le canvas -> playerCamera.look(dx, dy). UI dans
   index.html (#touch-ui, affichée via body.touch), viewport user-scalable=no
 - Delta time plafonné à 0.1 s dans la boucle de jeu
@@ -300,7 +301,9 @@ src/world/, src/player/, src/vehicles/, src/npc/, src/utils/
   redeployDelay. Projecteur de recherche allumé la nuit (setSearchlight).
   Respawn du joueur (R) : wanted = false + hélico despawn. HUD : '⚠ RECHERCHÉ'
   + PV de l'hélico quand il est actif
-- Mort du joueur : HUD 'KO ! R pour réapparaître', respawn au spawn avec PV max
+- Mort du joueur : HUD 'KO ! R pour réapparaître' (bouton R tactile sur mobile),
+  respawn au spawn avec PV max ; KO en véhicule = plus de conduite possible
+  (vehicle.update(delta, player.alive) : voiture/bateau immobilisés)
 - Pickups (src/world/Pickups.js) : pickups.ammoCount = 10 boîtes de munitions
   (rechargent le revolver à fond) + pickups.healCount = 10 bouteilles de pastis
   (+pickups.healAmount PV), posées le long des routes OSM (seeded, sur terre,

@@ -121,7 +121,7 @@ export class Car {
     for (const s of this.headlights) s.intensity = i;
   }
 
-  update(delta) {
+  update(delta, alive = true) {
     const v = CONFIG.vehicle;
     const groundY = this.ground.heightAt(this.pos.x, this.pos.z);
 
@@ -133,7 +133,7 @@ export class Car {
       this.waterTime = 0;
     }
 
-    if (!this.broken) {
+    if (!this.broken && alive) { // joueur KO = plus de conduite possible
       // --- Accélération / frein ---
       let throttle = 0;
       if (Input.isDown('KeyW')) throttle += 1;
@@ -155,7 +155,7 @@ export class Car {
       this.pos.x += Math.sin(yaw) * this.speed * delta;
       this.pos.z += Math.cos(yaw) * this.speed * delta;
     } else {
-      this.speed = 0; // en panne : la voiture ne roule plus
+      this.speed = 0; // en panne ou joueur KO : la voiture ne roule plus
     }
 
     // --- Limites du monde + collisions bâtiments ---
