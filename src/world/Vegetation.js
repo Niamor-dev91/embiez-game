@@ -34,6 +34,7 @@ export class Vegetation {
     this.scene = scene;
     this.terrain = terrain;
     this.pins = [];
+    this.colliders = []; // boîtes de collision des troncs (joueur/PNJ/véhicules)
     this.collectPins();
     this.createMeshes();
   }
@@ -101,6 +102,8 @@ export class Vegetation {
       const [x, z] = this.pins[i];
       const y = this.terrain.heightAt(x, z);
       if (y < 0.5) continue; // pas de pin dans l'eau
+      // le tronc est solide : petite boîte carrée (approximation du cylindre)
+      this.colliders.push({ cx: x, cz: z, w: p.trunkColliderSize, d: p.trunkColliderSize, yaw: 0 });
       const scale = 0.8 + rand() * 0.5;
       e.set(0, rand() * Math.PI * 2, 0);
       q.setFromEuler(e);

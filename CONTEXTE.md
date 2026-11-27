@@ -265,9 +265,10 @@ src/world/, src/player/, src/vehicles/, src/npc/, src/utils/
 
 ### Collisions
 - src/utils/Collisions.js : cercle (position + rayon) contre les OBB des
-  bâtiments (buildColliders depuis Buildings.colliders, yaw conservé ;
+  bâtiments + troncs (Game fusionne Buildings.colliders + Vegetation.colliders
+  : une petite boîte carrée de props.trunkColliderSize par pin, yaw 0 ;
   resolveCollisions pousse sur l'axe local de pénétration minimale,
-  2 passes, rotation monde<->local selon le yaw réel du bâtiment)
+  2 passes, rotation monde<->local selon le yaw réel)
 - Le joueur a un rayon (player.radius = 0.35 m) ; le module est réutilisable
   tel quel pour les futurs PNJ et véhicules
 - resolveCircleVsCircle(A, rA, B, rB) : pousse A hors de B (A cède) —

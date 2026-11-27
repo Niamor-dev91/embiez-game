@@ -118,7 +118,9 @@ export class Game {
 
     // Pickups : boîtes de munitions + bouteilles de pastis sur la map
     this.pickups = new Pickups(this.scene, this.ground);
-    this.player = new Player(this.scene, this.ground, this.buildings.colliders);
+    // Colliders solides : bâtiments + troncs des pins
+    const colliders = [...this.buildings.colliders, ...this.vegetation.colliders];
+    this.player = new Player(this.scene, this.ground, colliders);
     this.player.group.visible = false; // FPS : le perso est caché, l'arme = view model revolver
     this.playerCamera = new PlayerCamera(this.canvas, this.camera, this.player, this.ground);
     this.revolver = new Revolver(this.scene, this.camera); // view model attaché à la caméra
@@ -131,11 +133,11 @@ export class Game {
     const policeRoads = pickPoliceRoads(CONFIG.combat.policeCount, roads);
     this.npcs = [];
     for (let i = 0; i < CONFIG.npc.count; i++) {
-      this.npcs.push(new Npc(this.scene, this.ground, this.buildings.colliders, roads[i], i, false));
+      this.npcs.push(new Npc(this.scene, this.ground, colliders, roads[i], i, false));
     }
     for (let i = 0; i < CONFIG.combat.policeCount; i++) {
       this.npcs.push(
-        new Npc(this.scene, this.ground, this.buildings.colliders, policeRoads[i], 100 + i, true)
+        new Npc(this.scene, this.ground, colliders, policeRoads[i], 100 + i, true)
       );
     }
 
@@ -145,7 +147,7 @@ export class Game {
     const park = nearestRoadPoint(s.x, s.z);
     park.x += Math.sin(park.yaw) * 6;
     park.z += Math.cos(park.yaw) * 6;
-    this.car = new Car(this.scene, this.ground, this.buildings.colliders, park);
+    this.car = new Car(this.scene, this.ground, colliders, park);
 
     // Bateaux amarrés aux pontons du port (voilier, moteur, jetski)
     const spots = dockSpots(CONFIG.boat.types.length, this.ground, s);

@@ -187,6 +187,7 @@ export const CONFIG = {
     outlineScale: 1.06,        // la coquille noire dépasse de 6 %
     foundationMargin: 0.6,     // les murs des bâtiments s'enfoncent de 0.6 m sous le point le plus bas (pentes)
     rockColor: 0x8a8a8a,
+    trunkColliderSize: 0.5,  // boîte de collision carrée autour de chaque tronc de pin (m)
     surfaceColors: { default: 0x777777, pitch: 0x4a7c3a, parking: 0x666666, swimming_pool: 0x3aa0c8, beach: 0xc2b280, marina: 0x2fa8e8 /* bassin du port en bleu mer, pas gris */ },
     treeDensity: 1 / 120,      // pins par m² dans les forêts OSM
     treeMax: 500,              // plafond de pins procéduraux
