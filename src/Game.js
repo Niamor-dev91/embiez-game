@@ -361,13 +361,20 @@ export class Game {
           : { cx: p.x, cz: p.z, w: t, d: alongLen, yaw: house.yaw });
       };
       if (f === doorFace) {
-        const segLen = f.len / 2 - dw / 2;
-        if (segLen > 0.01) {
-          for (const side of [-1, 1]) {
-            const along = side * (dw / 2 + segLen / 2);
-            if (f.axis === 'x') push(along, f.n[1] * d / 2, segLen);
-            else push(f.n[0] * w / 2, along, segLen);
-          }
+        // Trou décalé de doorOffset (0.5 m) le long du mur : la porte ne tombe
+        // pas sur une fenêtre (les fenêtres sont centrées sur la façade)
+        const off = s.doorOffset;
+        const segL = f.len / 2 + off - dw / 2; // morceau avant le trou
+        const segR = f.len / 2 - off - dw / 2; // morceau après le trou
+        if (segL > 0.01) {
+          const cL = (-f.len / 2 + off - dw / 2) / 2;
+          if (f.axis === 'x') push(cL, f.n[1] * d / 2, segL);
+          else push(f.n[0] * w / 2, cL, segL);
+        }
+        if (segR > 0.01) {
+          const cR = (off + dw / 2 + f.len / 2) / 2;
+          if (f.axis === 'x') push(cR, f.n[1] * d / 2, segR);
+          else push(f.n[0] * w / 2, cR, segR);
         }
       } else if (f.axis === 'x') push(0, f.n[1] * d / 2, f.len);
       else push(f.n[0] * w / 2, 0, f.len);
@@ -376,17 +383,30 @@ export class Game {
 
     // Porte visuelle en bois, entrouverte, dans le trou de la façade
     const dl = doorFace.axis === 'x'
-      ? [0, doorFace.n[1] * (d / 2 + 0.08)]
-      : [doorFace.n[0] * (w / 2 + 0.08), 0];
+      ? [s.doorOffset, doorFace.n[1] * (d / 2 + 0.08)]
+      : [doorFace.n[0] * (w / 2 + 0.08), s.doorOffset];
     const dp = toWorld(dl[0], dl[1]);
     const door = new THREE.Mesh(
       new THREE.BoxGeometry(s.doorWidth, s.doorHeight, 0.12),
       new THREE.MeshLambertMaterial({ color: s.doorColor })
     );
     door.position.set(dp.x, this.ground.heightAt(dp.x, dp.z) + s.doorHeight / 2, dp.z);
-    door.rotation.y = house.yaw + (doorFace.axis === 'z' ? Math.PI / 2 : 0) + 0.55; // entrouverte
+    // Dans l'AXE du mur (à peine entreouverte), décalée de doorOffset
+    door.rotation.y = house.yaw + (doorFace.axis === 'z' ? Math.PI / 2 : 0) + 0.12; // entrouverte
     addOutline(door, 1.06, CONFIG.props.outlineColor);
     this.scene.add(door);
+
+    // Intérieur de la boutique : plafond beige sous le toit (au-dessus du
+    // joueur, pour ne pas voir le toit jaune de dessous). Sol = terrain tel quel.
+    const b = this.buildings.list[idx];
+    const wallTopY = this.ground.heightAt(house.cx, house.cz) + (b.height || 6);
+    const ceil = new THREE.Mesh(
+      new THREE.BoxGeometry(w - 0.4, 0.12, d - 0.4),
+      new THREE.MeshLambertMaterial({ color: s.interiorCeilColor })
+    );
+    ceil.position.set(house.cx, wallTopY - 0.06, house.cz);
+    ceil.rotation.y = house.yaw;
+    this.scene.add(ceil);
 
     // PNJ vendeur à l'intérieur (immobile, look vert)
     const keeper = new Npc(this.scene, this.ground, colliders, null, 555, false, s.keeperColors);

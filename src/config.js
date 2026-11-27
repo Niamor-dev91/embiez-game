@@ -215,7 +215,9 @@ export const CONFIG = {
     doorWidth: 1.2,        // largeur de l'ouverture (m) — la voiture (rayon 1.3 m) ne passe pas
     doorHeight: 2.2,
     wallThickness: 0.35,   // épaisseur des murs de la boutique (collision)
-    doorColor: 0x6a4a2a,   // porte en bois marron, entrouverte
+    doorColor: 0x6a4a2a,   // porte en bois marron, DANS l'axe du mur
+    doorOffset: -1.3,      // décalage de la porte le long du mur : 1,30 m vers la DROITE vu de l'extérieur (niveau fenêtre)
+    interiorCeilColor: 0xf2e3c2,  // plafond beige à l'intérieur (sous le toit, au-dessus du joueur)
     roofColor: 0xffd23a,   // toit JAUNE PASTIS de la boutique (repérable de loin)
     price: 100,            // prix du gilet pare-balles (€)
     armor: 10,             // points de bouclier donnés par le gilet (prioritaires sur les PV)

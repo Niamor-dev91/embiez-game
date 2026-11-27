@@ -349,6 +349,10 @@ src/world/, src/player/, src/vehicles/, src/npc/, src/utils/
   PORTE = trou de shop.doorWidth dans le mur : son collider OBB plein est
   remplacé par 4-5 murs (façade porte coupée en 2), toit repeint en JAUNE PASTIS
   (buildings.paintRoof, couleur par instance, repérable de loin), porte visuelle en bois
+  DANS l'axe du mur (rotation +0.12 rad) et décalée de shop.doorOffset (0.5 m)
+  le long de la façade (trou du mur ET porte déplacés : niveau fenêtre) ;
+  intérieur : plafond beige (shop.interiorCeilColor, sous le haut des murs),
+  sol = terrain tel quel (pas de texture posée)
   entrouverte (shop.door), PNJ vendeur à l'intérieur (state 'wait', look
   shop.keeperColors). Murs/toits des bâtiments en DoubleSide (on voit
   l'intérieur). E à moins de shop.interactDistance du vendeur = acheter un

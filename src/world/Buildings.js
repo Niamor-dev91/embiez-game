@@ -59,6 +59,7 @@ export class Buildings {
     const v = new THREE.Vector3();
     const s = new THREE.Vector3();
     const col = new THREE.Color();
+    this.list = list; // bâtiments OSM posés (hauteur, kind...) — utilisé par la boutique
     const winMats = []; // matrices des fenêtres (toutes façades)
     const colRoof = new THREE.Color(p.roofColor); // couleur par défaut des toits
 
