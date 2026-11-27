@@ -25,6 +25,8 @@ import { Pickups } from './world/Pickups.js';
 import { TouchControls } from './utils/TouchControls.js';
 import { mulberry32 } from './utils/random.js';
 
+import { Sound } from './utils/Sound.js';
+
 // Classe principale : renderer, scène, caméra, boucle d'animation.
 
 export class Game {
@@ -34,6 +36,7 @@ export class Game {
     this.clock = new THREE.Clock();
     this.hud = document.getElementById('hud');
     this.gameOverEl = document.getElementById('gameover'); // overlay "GAME OVER" au KO
+    this.sound = new Sound(); // sons procéduraux (WebAudio)
     this.fireCooldown = 0;
     this.lastHud = '';
     this.vehicle = null; // véhicule actif (car ou boat), null = à pied
@@ -186,6 +189,7 @@ export class Game {
         new Npc(this.scene, this.ground, colliders, policeRoads[i], 100 + i, true)
       );
     }
+    for (const n of this.npcs) n.sound = this.sound; // coups de feu des policiers
 
     // Voiturette électrique garée sur la route la plus proche du spawn,
     // décalée de 6 m le long de la route pour ne pas être sur le joueur
@@ -226,6 +230,7 @@ export class Game {
     // recherché (il a tiré sur un PNJ)
     this.wanted = false;
     this.heli = new PoliceHelicopter(this.scene, this.ground);
+    this.heli.sound = this.sound; // rafales de l'hélicoptère
   }
 
   // (Re)crée le PNJ client de la mission, sur la route la plus loin du spawn
@@ -299,6 +304,7 @@ export class Game {
     for (let i = 0; i < CONFIG.combat.policeCount; i++) {
       this.npcs.push(new Npc(this.scene, this.ground, this.colliders, policeRoads[i], 100 + i, true));
     }
+    for (const n of this.npcs) n.sound = this.sound;
     // Pickups, voiturette, bateaux et PNJ client remis en place
     this.pickups.reset();
     this.car.reset();
@@ -519,6 +525,17 @@ export class Game {
     this.client.update(delta, this.player);
     if (this.shop) this.shop.keeper.update(delta, this.player);
     this.heli.update(delta, this.player, this.wanted);
+    // Son continu : rotor de l'hélicoptère quand il est actif (atténué avec la distance)
+    if (this.heli.state === 'active' && this.player.alive) {
+      this.sound.heliOn();
+      const hd = Math.hypot(
+        this.heli.pos.x - this.player.group.position.x,
+        this.heli.pos.z - this.player.group.position.z
+      );
+      this.sound.setHeli(1 - hd / 220);
+    } else {
+      this.sound.heliOff();
+    }
     if (this.mode === 'debug') {
       this.debugCamera.update(delta);
     } else {
@@ -527,6 +544,7 @@ export class Game {
       this.fireCooldown -= delta;
       if (this.player.alive && !this.vehicle && (Input.mouseDown || Input.isDown('KeyF')) && this.fireCooldown <= 0) {
         if (this.revolver.tryShoot()) { // consomme une balle (6 max), rechargement auto si vide
+          this.sound.shoot(); // coup de feu du joueur
           this.fireCooldown = CONFIG.weapon.revolver.cooldown;
           const target = this.player.shoot(this.npcs, this.camera, this.heli);
           if (target && !target.isHelicopter) {
@@ -636,6 +654,15 @@ export class Game {
         }
         if (!this.vehicle) resolveCircleVsCircle(tc.pos, tc.radius, this.car.pos, CONFIG.vehicle.radius);
       }
+      // Son continu : moteur de la voiture quand on conduit (pitch = vitesse)
+      // (désactivé par défaut : sound.engine = false)
+      if (CONFIG.sound.engine && this.vehicle === this.car && this.player.alive && !this.car.broken) {
+        this.sound.engineOn();
+        this.sound.setEngine(Math.abs(this.car.speed) / CONFIG.vehicle.maxSpeed);
+      } else {
+        this.sound.engineOff();
+      }
+
       // Mission "Livraison de pastis" : timer + succès si la voiture est assez proche du client
       this.updateMission(delta);
       this.playerCamera.update(delta);

@@ -136,6 +136,7 @@ export class Npc {
     this.alerted = false; // policier : attaque le joueur
     this.fireTimer = CONFIG.combat.policeFireInterval;
     this.carHitCooldown = 0; // anti-dégâts répétés quand la voiture reste dessus
+    this.sound = null;       // Sound du jeu (mis par Game) : coups de feu du policier
     this.segIndex = 0;
     this.dir = 1;
     this.t = 0;
@@ -239,8 +240,11 @@ export class Npc {
         this.fireTimer -= delta;
         if (this.fireTimer <= 0) {
           this.fireTimer = c.policeFireInterval;
-          if (d < c.policeRange && Math.random() < c.policeHitChance) {
-            player.takeDamage(c.damagePerShot);
+          if (d < c.policeRange) {
+            if (this.sound) this.sound.shoot(0.6, d); // coup de feu du policier
+            if (Math.random() < c.policeHitChance) {
+              player.takeDamage(c.damagePerShot);
+            }
           }
         }
       }

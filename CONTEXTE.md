@@ -55,6 +55,18 @@ src/world/, src/player/, src/vehicles/, src/npc/, src/utils/
   bouton R (respawn, #btn-respawn) affiché seulement au KO via setRespawnVisible ;
   glisser le doigt sur le canvas -> playerCamera.look(dx, dy). UI dans
   index.html (#touch-ui, affichée via body.touch), viewport user-scalable=no
+- Son 100 % procédural WebAudio, aucune dépendance (src/utils/Sound.js, params
+  sound.*) : shoot() = coup de feu (bruit filtré + grave, one-shot, atténué avec
+  la distance) joué au tir du joueur, des policiers et des rafales de l'hélico ;
+  moteur de voiture DÉSACTIVÉ par défaut (sound.engine = false : le son
+  procédural ne convainquait pas, et aucun asset GTA III embarquable pour
+  copyright ; engineOn/setEngine restent prêts si sound.engine = true),
+  éteint à la sortie/panne/KO) ; rotor d'hélico en boucle quand actif (bruit + LFO
+  carré 11 Hz = "wop wop", volume selon la distance) ; crash() = grosse explosion
+  (bruit grave + sine 70->24 Hz + débris) jouée à l'impact au sol de l'hélico ;
+  AudioContext débloqué au 1er
+  clic/touche (autoplay policy). Sans WebAudio (test Node) : son désactivé sans
+  erreur
 - Delta time plafonné à 0.1 s dans la boucle de jeu
 
 ### Rendu (style rétro GTA III)

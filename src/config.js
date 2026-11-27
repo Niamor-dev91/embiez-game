@@ -2,6 +2,16 @@
 
 export const CONFIG = {
 
+  // --- Son (WebAudio procédural, aucune dépendance — src/utils/Sound.js) ---
+  sound: {
+    master: 0.5,        // volume général
+    shootVolume: 0.6,   // volume d'un coup de feu
+    engine: false,      // son du moteur de voiture DÉSACTIVÉ (procédural peu convaincant ; pas d'asset GTA III embarquable, copyright)
+    engineVolume: 0.18, // volume du moteur si réactivé (grave, en boucle quand on conduit)
+    heliVolume: 0.5,    // volume du rotor d'hélicoptère (atténué avec la distance)
+    crashVolume: 0.9,   // volume du crash de l'hélicoptère à l'impact
+  },
+
   // --- Rendu ---
   render: {
     maxPixelRatio: 1,        // limité à 1 pour le rendu rétro pixelisé

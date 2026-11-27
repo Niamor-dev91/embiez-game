@@ -27,6 +27,7 @@ export class PoliceHelicopter {
     this.tracerTimer = 0;
     this.animT = 0;
     this.drift = { x: 0, z: 0 };
+    this.sound = null; // Sound du jeu (mis par Game) : rafales de l'hélico
     this.group = this.buildMesh();
     this.group.visible = false;
     scene.add(this.group);
@@ -286,6 +287,7 @@ export class PoliceHelicopter {
       this.fireTimer = h.fireInterval;
       const dist = Math.hypot(p.x - this.pos.x, p.y + 1.2 - this.pos.y, p.z - this.pos.z);
       if (dist < h.range && this.hasLineOfSight(p)) {
+        if (this.sound) this.sound.shoot(1, dist); // rafale de l'hélicoptère
         if (Math.random() < h.hitChance) {
           player.takeDamage(h.damage);
           this.showTracer(p.x, p.y + 1.0, p.z);
@@ -316,6 +318,7 @@ export class PoliceHelicopter {
     if (this.pos.y <= floorY) {
       this.pos.y = floorY;
       this.state = 'burning';
+      if (this.sound) this.sound.crash(); // BOUM à l'impact au sol
       this.burnTimer = h.burnDuration;
       this.group.rotation.x = 0.2;
       this.group.rotation.z = 0.45;
