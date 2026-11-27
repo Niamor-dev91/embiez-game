@@ -18,6 +18,7 @@ export class Player {
     this.colliders = colliders; // boîtes des bâtiments (src/utils/Collisions.js)
     this.vy = 0;
     this.onGround = true;
+    this.swimming = false; // true quand on nage (eau profonde)
     this.walkPhase = 0;
     this.hp = CONFIG.combat.playerHp;
     this.money = 0; // bourse en euros (gagnée via les missions, ex. livraison de pastis)
@@ -82,6 +83,7 @@ export class Player {
     this.armor = 0; // idem pour le bouclier
     this.alive = true;
     this.vy = 0;
+    this.swimming = false;
     this.group.rotation.set(0, 0, 0);
     this.group.position.set(s.x, Math.max(this.ground.heightAt(s.x, s.z), 0), s.z);
   }
@@ -100,7 +102,7 @@ export class Player {
     if (Input.isDown('KeyA')) r -= 1;
     const moving = f !== 0 || r !== 0;
     const speed =
-      Input.isDown('ShiftLeft') || Input.isDown('ShiftRight') ? p.runSpeed : p.walkSpeed;
+      this.swimming ? p.swimSpeed : (Input.isDown('ShiftLeft') || Input.isDown('ShiftRight') ? p.runSpeed : p.walkSpeed);
 
     if (moving) {
       // avant/droite de la caméra projetés au sol
@@ -137,17 +139,24 @@ export class Player {
     // --- Collisions avec les bâtiments ---
     resolveCollisions(pos, p.radius, this.colliders);
 
-    // --- Verticale : saut + gravité + sol du terrain ---
-    if (Input.isDown('Space') && this.onGround) this.vy = p.jumpSpeed;
-    this.vy -= p.gravity * delta;
-    pos.y += this.vy * delta;
+    // --- Verticale : nage en eau profonde (tête à la surface), sinon saut + gravité + sol ---
     const groundY = this.ground.heightAt(pos.x, pos.z);
-    if (pos.y <= groundY) {
-      pos.y = groundY;
+    this.swimming = groundY < -p.swimDepth; // assez profond = on nage
+    if (this.swimming) {
       this.vy = 0;
-      this.onGround = true;
-    } else {
       this.onGround = false;
+      pos.y += (-p.swimDepth - pos.y) * Math.min(1, 10 * delta); // remonte doucement à la surface
+    } else {
+      if (Input.isDown('Space') && this.onGround) this.vy = p.jumpSpeed;
+      this.vy -= p.gravity * delta;
+      pos.y += this.vy * delta;
+      if (pos.y <= groundY) {
+        pos.y = groundY;
+        this.vy = 0;
+        this.onGround = true;
+      } else {
+        this.onGround = false;
+      }
     }
   }
 }

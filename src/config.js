@@ -71,6 +71,8 @@ export const CONFIG = {
     turnSpeed: 12,           // vitesse de rotation du perso (rad/s)
     gravity: 25,             // mètres par seconde carrée
     jumpSpeed: 9,            // impulsion du saut (m/s)
+    swimSpeed: 3,            // vitesse en nage (m/s)
+    swimDepth: 1.55,         // profondeur min pour nager : tête à la surface (yeux à 1,62 m)
     spawn: { x: -3, z: -349 }, // quai du port de l'île, à côté des pontons (y calé sur le sol)
   },
 
