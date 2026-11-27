@@ -177,10 +177,11 @@ src/world/, src/player/, src/vehicles/, src/npc/, src/utils/
 
 ### Caméra
 - Deux caméras, bascule avec F8 : mode 'player' (défaut) ou 'debug'
-- Caméra joueur (3e personne, src/player/PlayerCamera.js) : orbite autour
-  du perso (souris en pointer lock ou flèches), suivi adouci par lerp,
-  ne traverse pas le sol ; Game passe son yaw au joueur pour un
-  déplacement relatif à la caméra
+- Caméra joueur (src/player/PlayerCamera.js) : FPS à pied (caméra aux yeux,
+  playerCamera.eyeHeight, yaw/pitch souris pointer lock ou flèches, pitch
+  libre [-1.45, 1.45]) ; 3e personne en véhicule (orbite, lerp, ne traverse
+  pas le sol). En FPS le mesh du joueur est caché (visible = false).
+  Game passe le yaw au joueur pour un déplacement relatif à la caméra
 - Caméra de debug libre (src/utils/DebugCamera.js) : ZQSD + souris
   (pointer lock au clic) ou flèches, Espace/Ctrl = monter/descendre,
   Shift = rapide ; a un flag `enabled` pour coexister avec la caméra joueur
@@ -232,8 +233,12 @@ src/world/, src/player/, src/vehicles/, src/npc/, src/utils/
 ### Combat (pistolet, points de vie)
 - src/utils/Combat.js : fireHitscan (droite origine+direction vs cibles,
   rayon targetRadius, portée) — le tir joueur part de la CAMÉRA vers le viseur
-- Joueur : 10 PV (combat.playerHp), pistolet visible (addGun dans
-  src/utils/Humanoid.js), tir au clic souris ou F avec cooldown
+- Joueur : 10 PV (combat.playerHp), REVOLVER 6 balles façon XIII en view model
+  FPS (src/player/Revolver.js, attaché à la caméra : carcasse/canon/barillet/
+  crosse bois + outline noir toon, recul au tir, rechargement auto de 6
+  balles en weapon.revolver.reloadTime quand le chargeur est vide), tir au
+  clic souris ou F (cooldown weapon.revolver.cooldown), à pied uniquement ;
+  HUD affiche 'Revolver : X/6' ou 'RECHARGEMENT…'
 - PNJ : 3 PV ; touché -> state 'flee' (fuit le joueur à fleeSpeed, se calme
   à fleeDistance) ; à 0 PV -> allongé au sol (state 'dead')
 - PNJ policier (combat.policeCount = 3, look bleu foncé npc.policeColors,

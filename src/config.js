@@ -60,13 +60,29 @@ export const CONFIG = {
 
   // --- Caméra du joueur (3e personne, orbite autour du perso) ---
   playerCamera: {
-    distance: 6,             // distance derrière le joueur (mètres)
-    height: 1.6,             // hauteur du point visé au-dessus des pieds
-    lerpSpeed: 10,           // vitesse du suivi adouci
+    distance: 6,             // distance derrière le véhicule (mètres, mode 3e pers. véhicule)
+    height: 1.6,             // hauteur du point visé au-dessus des pieds (véhicule)
+    eyeHeight: 1.62,         // hauteur des yeux du joueur en FPS (mètres)
+    lerpSpeed: 10,           // vitesse du suivi adouci (véhicule)
     mouseSensitivity: 0.0025, // radians par pixel
     keyTurnSpeed: 2.5,       // radians par seconde (flèches)
-    minPitch: -0.2,
-    maxPitch: 1.2,
+    minPitch: -1.45,         // FPS : on peut regarder en haut/bas
+    maxPitch: 1.45,
+  },
+  weapon: {
+    revolver: {
+      ammo: 6,               // balles dans le chargeur (revolver façon XIII)
+      reloadTime: 1.8,       // rechargement automatique quand le chargeur est vide (s)
+      cooldown: 0.5,         // secondes entre deux tirs
+      kick: 0.09,            // recul du view model au tir (m)
+      colors: {
+        metal: 0x3a3f46,     // carcasse / canon
+        metalDark: 0x23262b,  // barillet / chien
+        wood: 0x7a5230,      // crosse
+        outline: 0x101018,   // contour noir toon (style XIII)
+      },
+      viewPos: { x: 0.28, y: -0.26, z: -0.55 }, // position du view model dans la caméra
+    },
   },
 
   // --- Voiturette électrique ---
@@ -118,7 +134,7 @@ export const CONFIG = {
     policeCount: 3,          // nombre de policiers (placés près du village)
     damagePerShot: 1,        // dégâts d'une balle
     playerFireRange: 120,    // portée du tir joueur (m)
-    playerFireCooldown: 0.25, // secondes entre deux tirs du joueur
+    playerFireCooldown: 0.5, // secondes entre deux tirs du revolver (voir weapon.revolver.cooldown)
     targetRadius: 0.7,       // rayon de détection d'une cible (m)
     policeSpeed: 4.5,        // vitesse de poursuite du policier (m/s)
     policeStopDistance: 10,  // distance à laquelle il s'arrête pour tirer (m)

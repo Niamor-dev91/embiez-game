@@ -3,9 +3,11 @@ import * as THREE from 'three';
 import { CONFIG } from '../config.js';
 import { Input } from '../utils/Input.js';
 
-// Caméra 3e personne : orbite autour du joueur (souris en pointer lock
-// ou flèches), suit le joueur en adoucissant les mouvements (lerp),
-// sans jamais traverser le sol.
+// Caméra du joueur :
+// - à pied = FPS : la caméra est aux yeux du joueur (eyeHeight), rotation
+//   yaw/pitch à la souris (pointer lock) ou aux flèches
+// - en véhicule = 3e personne : orbite derrière la cible, suivi adouci (lerp),
+//   sans jamais traverser le sol.
 
 export class PlayerCamera {
 
@@ -52,7 +54,15 @@ export class PlayerCamera {
     if (Input.isDown('ArrowDown')) this.pitch -= c.keyTurnSpeed * delta;
     this.clampPitch();
 
-    // Position souhaitée : derrière et au-dessus de la cible (joueur/voiture)
+    if (this.target === this.player.group) {
+      // --- FPS : caméra aux yeux du joueur ---
+      const p = this.player.group.position;
+      this.camera.position.set(p.x, p.y + c.eyeHeight, p.z);
+      this.camera.rotation.set(this.pitch, this.yaw, 0); // ordre YXZ (initCamera)
+      return;
+    }
+
+    // --- 3e personne (véhicule) : position souhaitée derrière la cible ---
     const target = this.target.position;
     const cp = Math.cos(this.pitch);
     const desired = new THREE.Vector3(

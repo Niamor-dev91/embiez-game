@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { CONFIG } from '../config.js';
 import { Input } from '../utils/Input.js';
 import { resolveCollisions } from '../utils/Collisions.js';
-import { createHumanoid, setWalkAnimation, addGun } from '../utils/Humanoid.js';
+import { createHumanoid, setWalkAnimation } from '../utils/Humanoid.js';
 import { fireHitscan } from '../utils/Combat.js';
 
 // Personnage à pied (3e personne) avec pistolet et points de vie.
@@ -31,10 +31,10 @@ export class Player {
   }
 
   createMesh() {
-    // Mesh humanoïde partagé avec les PNJ (src/utils/Humanoid.js)
+    // Mesh humanoïde partagé avec les PNJ (src/utils/Humanoid.js).
+    // En FPS le joueur est caché : son arme est le view model Revolver.
     this.humanoid = createHumanoid(CONFIG.player.colors);
     this.group = this.humanoid.group;
-    addGun(this.humanoid, CONFIG.combat.gunColor); // le joueur a un pistolet
   }
 
   // Tir hitscan depuis la caméra vers l'avant ; renvoie le PNJ touché ou null

@@ -9,6 +9,7 @@ import { Buildings } from './world/Buildings.js';
 import { Vegetation } from './world/Vegetation.js';
 import { Player } from './player/Player.js';
 import { PlayerCamera } from './player/PlayerCamera.js';
+import { Revolver } from './player/Revolver.js';
 import { Npc, pickRoads, pickPoliceRoads, nearestRoadPoint } from './npc/Npc.js';
 import { Car } from './vehicles/Car.js';
 import { Boat, dockSpots } from './vehicles/Boat.js';
@@ -104,7 +105,9 @@ export class Game {
     // Sol solide : terrain + pontons du port (le perso marche DESSUS)
     this.ground = new Ground(this.terrain, this.roads);
     this.player = new Player(this.scene, this.ground, this.buildings.colliders);
+    this.player.group.visible = false; // FPS : le perso est caché, l'arme = view model revolver
     this.playerCamera = new PlayerCamera(this.canvas, this.camera, this.player, this.ground);
+    this.revolver = new Revolver(this.scene, this.camera); // view model attaché à la caméra
     this.debugCamera = new DebugCamera(this.canvas, this.camera);
 
     // PNJ : répartis sur des chemins différents de l'île, départ aléatoire
@@ -153,7 +156,6 @@ export class Game {
 
   enterVehicle(v) {
     this.vehicle = v;
-    this.player.group.visible = false;
     this.playerCamera.target = v.group;
     this.playerCamera.distance = v === this.car ? CONFIG.vehicle.cameraDistance : CONFIG.boat.cameraDistance;
   }
@@ -161,8 +163,7 @@ export class Game {
   exitVehicle() {
     const v = this.vehicle;
     this.vehicle = null;
-    this.player.group.visible = true;
-    this.playerCamera.target = this.player.group;
+    this.playerCamera.target = this.player.group; // retour en FPS
     this.playerCamera.distance = CONFIG.playerCamera.distance;
     // Le joueur réapparaît à côté du véhicule, sur le sol
     const p = v.pos;
@@ -184,13 +185,17 @@ export class Game {
       // Tir du joueur (clic souris ou F) avec cooldown ; toucher un PNJ
       // alerte les policiers
       this.fireCooldown -= delta;
-      if (this.player.alive && (Input.mouseDown || Input.isDown('KeyF')) && this.fireCooldown <= 0) {
-        this.fireCooldown = CONFIG.combat.playerFireCooldown;
-        const target = this.player.shoot(this.npcs, this.camera);
-        if (target) {
-          for (const n of this.npcs) if (n.isPolice) n.alerted = true;
+      if (this.player.alive && !this.vehicle && (Input.mouseDown || Input.isDown('KeyF')) && this.fireCooldown <= 0) {
+        if (this.revolver.tryShoot()) { // consomme une balle (6 max), rechargement auto si vide
+          this.fireCooldown = CONFIG.weapon.revolver.cooldown;
+          const target = this.player.shoot(this.npcs, this.camera);
+          if (target) {
+            for (const n of this.npcs) if (n.isPolice) n.alerted = true;
+          }
         }
       }
+      this.revolver.group.visible = !this.vehicle;
+      this.revolver.update(delta);
       // Respawn après un KO
       if (!this.player.alive && Input.isDown('KeyR')) this.player.respawn();
 
@@ -261,7 +266,10 @@ export class Game {
     if (!this.player.alive) {
       txt = 'KO ! Appuie sur R pour réapparaître';
     } else {
-      txt = 'PV : ' + this.player.hp + '/' + CONFIG.combat.playerHp + '   |   clic ou F = tirer';
+      const ammoTxt = this.revolver.isReloading
+        ? 'RECHARGEMENT…'
+        : 'Revolver : ' + this.revolver.ammo + '/' + this.revolver.maxAmmo;
+      txt = 'PV : ' + this.player.hp + '/' + CONFIG.combat.playerHp + '   |   ' + ammoTxt + '   |   clic ou F = tirer';
       if (this.vehicle) {
         const pan = this.vehicle === this.car && this.car.broken
           ? "   |   PANNE ! (trop longtemps dans l'eau)"
