@@ -28,6 +28,21 @@ export class Sound {
     const unlock = () => this.resume();
     window.addEventListener('pointerdown', unlock);
     window.addEventListener('keydown', unlock);
+    this.initMusic(); // musique de fond (fichier libre de droits)
+  }
+
+  // Musique de fond : élément HTMLAudio en boucle, démarrée au premier geste
+  // utilisateur (autoplay policy des navigateurs). Fichier servi depuis public/.
+  initMusic() {
+    if (typeof Audio === 'undefined') return; // ex. test Node
+    const base = (import.meta.env && import.meta.env.BASE_URL) || '/'; // base Vite ('/embiez-game/') ; '/' en test Node
+    this.music = new Audio(base + this.cfg.musicFile);
+    this.music.loop = true;
+    this.music.volume = this.cfg.musicVolume;
+    let started = false;
+    const start = () => { if (started) return; started = true; this.music.play().catch(() => {}); };
+    window.addEventListener('pointerdown', start, { once: true });
+    window.addEventListener('keydown', start, { once: true });
   }
 
   resume() {

@@ -10,6 +10,8 @@ export const CONFIG = {
     engineVolume: 0.18, // volume du moteur si réactivé (grave, en boucle quand on conduit)
     heliVolume: 0.5,    // volume du rotor d'hélicoptère (atténué avec la distance)
     crashVolume: 0.9,   // volume du crash de l'hélicoptère à l'impact
+    musicFile: 'music/gymnopedie1.ogg', // musique de fond (libre de droits, voir public/music/CREDITS.txt)
+    musicVolume: 0.3,   // volume de la musique de fond
   },
 
   // --- Rendu ---
