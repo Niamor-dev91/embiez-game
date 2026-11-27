@@ -366,12 +366,14 @@ export class Game {
     }
     // 4 murs ; la façade de la porte est coupée en deux autour du trou central
     const walls = [];
+    const bOSM = this.buildings.list[idx];
+    const wallTopY = this.ground.heightAt(house.cx, house.cz) + (bOSM.height || 6);
     for (const f of facades) {
       const push = (lx, lz, alongLen) => {
         const p = toWorld(lx, lz);
         walls.push(f.axis === 'x'
-          ? { cx: p.x, cz: p.z, w: alongLen, d: t, yaw: house.yaw }
-          : { cx: p.x, cz: p.z, w: t, d: alongLen, yaw: house.yaw });
+          ? { cx: p.x, cz: p.z, w: alongLen, d: t, yaw: house.yaw, maxY: wallTopY }
+          : { cx: p.x, cz: p.z, w: t, d: alongLen, yaw: house.yaw, maxY: wallTopY });
       };
       if (f === doorFace) {
         // Trou décalé de doorOffset (0.5 m) le long du mur : la porte ne tombe
@@ -411,8 +413,7 @@ export class Game {
 
     // Intérieur de la boutique : plafond beige sous le toit (au-dessus du
     // joueur, pour ne pas voir le toit jaune de dessous). Sol = terrain tel quel.
-    const b = this.buildings.list[idx];
-    const wallTopY = this.ground.heightAt(house.cx, house.cz) + (b.height || 6);
+    // (bOSM et wallTopY déjà calculés plus haut pour les murs)
     const ceil = new THREE.Mesh(
       new THREE.BoxGeometry(w - 0.4, 0.12, d - 0.4),
       new THREE.MeshLambertMaterial({ color: s.interiorCeilColor })

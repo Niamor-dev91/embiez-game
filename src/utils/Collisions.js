@@ -28,6 +28,9 @@ export function resolveCollisions(pos, radius, colliders) {
   let hit = false;
   for (let pass = 0; pass < 2; pass++) {
     for (const c of colliders) {
+      // Collision verticale : au-dessus du haut du toit (c.maxY), on passe
+      // (l'hélicoptère vole au-dessus des bâtiments sans être bloqué)
+      if (c.maxY !== undefined && pos.y > c.maxY) continue;
       const yaw = c.yaw || 0;
       const cosY = Math.cos(yaw);
       const sinY = Math.sin(yaw);

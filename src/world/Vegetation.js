@@ -103,7 +103,8 @@ export class Vegetation {
       const y = this.terrain.heightAt(x, z);
       if (y < 0.5) continue; // pas de pin dans l'eau
       // le tronc est solide : petite boîte carrée (approximation du cylindre)
-      this.colliders.push({ cx: x, cz: z, w: p.trunkColliderSize, d: p.trunkColliderSize, yaw: 0 });
+      // maxY = haut du pin (~7 m) : au-dessus, plus de collision (vol)
+      this.colliders.push({ cx: x, cz: z, w: p.trunkColliderSize, d: p.trunkColliderSize, yaw: 0, maxY: y + 7 });
       const scale = 0.8 + rand() * 0.5;
       e.set(0, rand() * Math.PI * 2, 0);
       q.setFromEuler(e);

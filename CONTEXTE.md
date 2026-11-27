@@ -380,7 +380,11 @@ src/world/, src/player/, src/vehicles/, src/npc/, src/utils/
   bâtiments + troncs (Game fusionne Buildings.colliders + Vegetation.colliders
   : une petite boîte carrée de props.trunkColliderSize par pin, yaw 0 ;
   resolveCollisions pousse sur l'axe local de pénétration minimale,
-  2 passes, rotation monde<->local selon le yaw réel)
+  2 passes, rotation monde<->local selon le yaw réel).
+  Collision VERTICALE : chaque collider a un maxY (haut du toit pour les
+  bâtiments = wallTop+roofH, y+7 pour les troncs, wallTop pour les murs de la
+  boutique) ; si pos.y > maxY, la collision est ignorée -> l'hélicoptère vole
+  au-dessus des bâtiments sans être bloqué, le joueur à pied reste bloqué
 - Le joueur a un rayon (player.radius = 0.35 m) ; le module est réutilisable
   tel quel pour les futurs PNJ et véhicules
 - resolveCircleVsCircle(A, rA, B, rB) : pousse A hors de B (A cède) —

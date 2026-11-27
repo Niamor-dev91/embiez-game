@@ -107,7 +107,8 @@ export class Buildings {
       roofs.setMatrixAt(i, m);
       roofs.setColorAt(i, colRoof);
 
-      this.colliders.push({ cx: b.cx, cz: b.cz, w: b.w, d: b.d, yaw: b.yaw });
+      // maxY = haut du toit : la collision ne s'applique qu'en dessous (vol)
+      this.colliders.push({ cx: b.cx, cz: b.cz, w: b.w, d: b.d, yaw: b.yaw, maxY: wallTop + roofH });
 
       // --- Fenêtres sur les 4 façades (repère local du bâtiment) ---
       for (let f = 0; f < 4; f++) {
