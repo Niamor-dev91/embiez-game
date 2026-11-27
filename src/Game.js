@@ -311,7 +311,9 @@ export class Game {
     } else {
       const ammoTxt = this.revolver.isReloading
         ? 'RECHARGEMENT…'
-        : 'Revolver : ' + this.revolver.ammo + '/' + this.revolver.maxAmmo;
+        : 'Revolver : ' + this.revolver.ammo + '/' + this.revolver.maxAmmo
+          + ' | stock ' + this.revolver.reserve + '/' + this.revolver.maxReserve
+          + (this.revolver.ammo === 0 && this.revolver.reserve === 0 ? ' VIDE !' : '');
       txt = 'PV : ' + this.player.hp + '/' + CONFIG.combat.playerHp + '   |   ' + ammoTxt + '   |   clic ou F = tirer';
       if (this.vehicle) {
         const pan = this.vehicle === this.car && this.car.broken

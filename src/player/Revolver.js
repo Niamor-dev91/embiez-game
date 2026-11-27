@@ -13,8 +13,10 @@ export class Revolver {
   constructor(scene, camera) {
     this.camera = camera;
     this.cfg = CONFIG.weapon.revolver;
-    this.ammo = this.cfg.ammo;
+    this.ammo = this.cfg.ammo;          // chargeur
     this.maxAmmo = this.cfg.ammo;
+    this.reserve = this.cfg.maxReserve; // stock de balles (max maxReserve)
+    this.maxReserve = this.cfg.maxReserve;
     this.reloading = 0; // temps de rechargement restant (s), 0 = prêt
     this.recoil = 0;    // 1 juste après un tir, redescend à 0
     this.group = this.buildMesh();
@@ -67,12 +69,23 @@ export class Revolver {
   tryShoot() {
     if (this.reloading > 0) return false;
     if (this.ammo <= 0) {
-      this.reloading = this.cfg.reloadTime; // chargeur vide -> rechargement auto
+      this.tryReload(); // chargeur vide -> recharge depuis le stock si possible
       return false;
     }
     this.ammo--;
     this.recoil = 1;
-    if (this.ammo === 0) this.reloading = this.cfg.reloadTime;
+    if (this.ammo === 0) this.tryReload();
+    return true;
+  }
+
+  // Recharge le chargeur depuis le stock (maxAmmo balles). Renvoie false si
+  // le stock est vide -> plus de rechargement possible.
+  tryReload() {
+    if (this.reserve <= 0) return false;
+    const n = Math.min(this.maxAmmo, this.reserve);
+    this.ammo = n;
+    this.reserve -= n;
+    this.reloading = this.cfg.reloadTime;
     return true;
   }
 
@@ -94,8 +107,7 @@ export class Revolver {
       this.group.rotation.x += Math.sin(t * Math.PI) * 0.55;
       if (this.barillet) this.barillet.rotation.x += delta * 14;
       if (this.reloading <= 0) {
-        this.reloading = 0;
-        this.ammo = this.maxAmmo;
+        this.reloading = 0; // le chargeur a déjà été rempli dans tryReload()
       }
     }
   }

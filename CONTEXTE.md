@@ -252,10 +252,13 @@ src/world/, src/player/, src/vehicles/, src/npc/, src/utils/
   rayon targetRadius, portée) — le tir joueur part de la CAMÉRA vers le viseur
 - Joueur : 10 PV (combat.playerHp), REVOLVER 6 balles façon XIII en view model
   FPS (src/player/Revolver.js, attaché à la caméra : carcasse/canon/barillet/
-  crosse bois + outline noir toon, recul au tir, rechargement auto de 6
-  balles en weapon.revolver.reloadTime quand le chargeur est vide), tir au
-  clic souris ou F (cooldown weapon.revolver.cooldown), à pied uniquement ;
-  HUD affiche 'Revolver : X/6' ou 'RECHARGEMENT…'
+  crosse bois + outline noir toon, recul au tir), tir au
+  clic souris ou F (cooldown weapon.revolver.cooldown), à pied uniquement.
+  Chargeur de 6 balles + STOCK de balles (weapon.revolver.maxReserve = 30) :
+  le rechargement auto (reloadTime) puise 6 balles dans le stock ; stock
+  vide = plus de rechargement possible. Les boîtes de munitions remplissent
+  le STOCK (+pickups.ammoBoxAmount, plafonné). HUD : 'Revolver : X/6 |
+  stock Y/30' ou 'RECHARGEMENT…'
 - PNJ : 3 PV ; touché -> state 'flee' (fuit le joueur à fleeSpeed, se calme
   à fleeDistance) ; à 0 PV -> allongé au sol (state 'dead')
 - PNJ policier (combat.policeCount = 5, look bleu foncé npc.policeColors,

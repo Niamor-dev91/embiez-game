@@ -128,9 +128,10 @@ export class Pickups {
       const d = Math.hypot(playerPos.x - it.pos.x, playerPos.z - it.pos.z);
       if (d >= p.pickupDistance) continue;
       if (it.kind === 'ammo') {
-        revolver.ammo = revolver.maxAmmo;
-        revolver.reloading = 0;
-        msg = 'Munitions ! Revolver rechargé (' + revolver.ammo + '/' + revolver.maxAmmo + ')';
+        // La boîte remplit le STOCK de balles (pas le chargeur directement)
+        const before = revolver.reserve;
+        revolver.reserve = Math.min(revolver.maxReserve, revolver.reserve + p.ammoBoxAmount);
+        msg = 'Munitions ! +' + (revolver.reserve - before) + ' balles (stock ' + revolver.reserve + '/' + revolver.maxReserve + ')';
       } else {
         const before = player.hp;
         player.hp = Math.min(CONFIG.combat.playerHp, player.hp + p.healAmount);

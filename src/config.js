@@ -66,6 +66,7 @@ export const CONFIG = {
   weapon: {
     revolver: {
       ammo: 6,               // balles dans le chargeur (revolver façon XIII)
+      maxReserve: 30,        // stock de balles max du joueur (réserve)
       reloadTime: 1.8,       // rechargement automatique quand le chargeur est vide (s)
       cooldown: 0.5,         // secondes entre deux tirs
       kick: 0.09,            // recul du view model au tir (m)
@@ -176,6 +177,7 @@ export const CONFIG = {
     pickupDistance: 1.4,     // distance de ramassage (m)
     respawnTime: 30,         // réapparition après ramassage (s)
     healAmount: 3,           // PV rendus par une bouteille de pastis
+    ammoBoxAmount: 12,       // balles ajoutées au stock par une boîte de munitions
     ammoColor: 0x5a6a3a,     // boîte de munitions kaki
     ammoTrim: 0xd8c832,      // couvercle jaune
     bottleGlass: 0x4a8a5a,   // verre vert de la bouteille
