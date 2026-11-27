@@ -137,6 +137,69 @@ export class Game {
       transparent: true, opacity: 0, fog: false, depthWrite: false,
     }));
     this.scene.add(this.stars);
+    this.initClouds(); // petits nuages animés dans le ciel
+  }
+
+  // --- Nuages : petits groupes de sphères aplaties blanches qui apparaissent,
+  // grossissent, dérivent avec le vent, rétrécissent puis disparaissent ---
+  initClouds() {
+    const rand = mulberry32(1234);
+    const c = CONFIG.sky.clouds;
+    const mat = new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.92 });
+    this.clouds = [];
+    for (let i = 0; i < c.count; i++) {
+      const g = new THREE.Group();
+      const n = 3 + Math.floor(rand() * 3); // 3 à 5 "boules" par nuage
+      for (let b = 0; b < n; b++) {
+        const r = 8 + rand() * 10;
+        const puff = new THREE.Mesh(new THREE.SphereGeometry(r, 10, 8), mat);
+        puff.position.set((b - (n - 1) / 2) * r * 0.9, rand() * 4, (rand() - 0.5) * r * 0.8);
+        puff.scale.y = 0.55; // aplati en galette
+        g.add(puff);
+      }
+      g.position.set(
+        (rand() * 2 - 1) * c.spread,
+        c.minAltitude + rand() * (c.maxAltitude - c.minAltitude),
+        (rand() * 2 - 1) * c.spread
+      );
+      this.scene.add(g);
+      this.clouds.push({
+        group: g,
+        rand,
+        t: 0,
+        delay: c.maxDelay * rand(), // attente avant l'apparition
+        period: c.minPeriod + rand() * (c.maxPeriod - c.minPeriod), // durée du cycle
+        maxScale: 0.7 + rand() * 0.7,
+      });
+    }
+  }
+
+  updateClouds(delta) {
+    const c = CONFIG.sky.clouds;
+    for (const cl of this.clouds) {
+      cl.t += delta;
+      let s = 0; // échelle courante (0 = disparu)
+      if (cl.t > cl.delay) {
+        const u = (cl.t - cl.delay) / cl.period; // 0..1 dans le cycle
+        if (u >= 1) {
+          // disparu : on le téléporte ailleurs et on relance un cycle après un délai
+          cl.t = 0;
+          cl.delay = c.maxDelay * cl.rand();
+          cl.group.position.set(
+            (cl.rand() * 2 - 1) * c.spread,
+            c.minAltitude + cl.rand() * (c.maxAltitude - c.minAltitude),
+            (cl.rand() * 2 - 1) * c.spread
+          );
+        } else if (u < 0.25) s = u / 0.25;      // grossit
+        else if (u > 0.75) s = (1 - u) / 0.25;  // rétrécit
+        else s = 1;                             // taille maxi
+      }
+      const sc = s * cl.maxScale;
+      cl.group.visible = sc > 0.02;
+      cl.group.scale.set(sc, sc, sc);
+      cl.group.position.x += c.windSpeed * delta; // dérive lente
+      if (cl.group.position.x > c.spread + 200) cl.group.position.x = -c.spread - 200; // reboucle
+    }
   }
 
   initCamera() {
@@ -574,6 +637,7 @@ export class Game {
 
   update(delta) {
     this.updateDayNight(delta);
+    this.updateClouds(delta); // cycle de vie des nuages
     this.sea.update(delta);
     if (this.vehicle) {
       this.player.group.position.set(this.vehicle.pos.x, this.vehicle.pos.y, this.vehicle.pos.z);

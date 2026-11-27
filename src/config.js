@@ -23,6 +23,16 @@ export const CONFIG = {
     color: 0x55b8ff,         // bleu vif (style Wind Waker)
     fogNear: 300,            // distance où le brouillard commence
     fogFar: 2500,            // distance où tout est noyé dans le brouillard
+    clouds: {
+      count: 12,        // nombre de nuages dans le ciel
+      minAltitude: 130, // altitude min d'un nuage (m)
+      maxAltitude: 220, // altitude max (m)
+      spread: 700,      // demi-largeur de la zone de spawn autour du centre (m)
+      minPeriod: 75,           // durée min du cycle (s, 3x plus lent)
+      maxPeriod: 150,          // durée max du cycle (s, 3x plus lent)
+      maxDelay: 90,            // attente max avant (re)apparition (s)
+      windSpeed: 0.67,         // dérive lente vers l'est (m/s, 3x plus lent)
+    },
   },
 
   // --- Caméra ---
