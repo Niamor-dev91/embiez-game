@@ -2,7 +2,7 @@
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <!-- Dev : éviter que le navigateur garde en cache les vieux modules HMR -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
     <title>Embiez POC</title>
@@ -56,12 +56,68 @@
         opacity: 0.8;
         pointer-events: none;
       }
+
+      /* --- Contrôles tactiles (affichés uniquement sur écran tactile) --- */
+      #touch-ui { display: none; }
+      body.touch #touch-ui { display: block; }
+      body.touch #game-canvas { touch-action: none; }
+
+      #joystick {
+        position: fixed;
+        left: 24px;
+        bottom: 24px;
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.12);
+        border: 2px solid rgba(255, 255, 255, 0.35);
+        pointer-events: auto;
+      }
+      #joystick-knob {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 52px;
+        height: 52px;
+        margin: -26px 0 0 -26px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.45);
+      }
+
+      .tbtn {
+        position: fixed;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.18);
+        border: 2px solid rgba(255, 255, 255, 0.45);
+        color: #fff;
+        font-family: monospace;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-shadow: 1px 1px 0 #000;
+        pointer-events: auto;
+        user-select: none;
+        -webkit-user-select: none;
+      }
+      #btn-fire { right: 24px; bottom: 96px; width: 84px; height: 84px; font-size: 18px; background: rgba(216, 74, 42, 0.35); }
+      #btn-jump { right: 124px; bottom: 24px; width: 64px; height: 64px; }
+      #btn-run  { right: 24px; bottom: 200px; width: 56px; height: 56px; }
+      #btn-use  { right: 196px; bottom: 110px; width: 56px; height: 56px; }
     </style>
   </head>
   <body>
     <canvas id="game-canvas"></canvas>
     <div id="hud"></div>
     <div id="crosshair"></div>
+    <!-- Contrôles tactiles (joystick + boutons), visibles si écran tactile -->
+    <div id="touch-ui">
+      <div id="joystick"><div id="joystick-knob"></div></div>
+      <div class="tbtn" id="btn-fire">TIR</div>
+      <div class="tbtn" id="btn-jump">SAUT</div>
+      <div class="tbtn" id="btn-run">COURIR</div>
+      <div class="tbtn" id="btn-use">E</div>
+    </div>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>

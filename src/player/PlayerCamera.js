@@ -32,10 +32,15 @@ export class PlayerCamera {
     document.addEventListener('mousemove', (e) => {
       if (!this.enabled) return;
       if (document.pointerLockElement !== this.canvas) return;
-      this.yaw -= e.movementX * CONFIG.playerCamera.mouseSensitivity;
-      this.pitch -= e.movementY * CONFIG.playerCamera.mouseSensitivity;
-      this.clampPitch();
+      this.look(e.movementX, e.movementY);
     });
+  }
+
+  // Rotation caméra (souris en pointer lock, ou doigt sur écran tactile)
+  look(dx, dy) {
+    this.yaw -= dx * CONFIG.playerCamera.mouseSensitivity;
+    this.pitch -= dy * CONFIG.playerCamera.mouseSensitivity;
+    this.clampPitch();
   }
 
   clampPitch() {

@@ -49,6 +49,11 @@ src/world/, src/player/, src/vehicles/, src/npc/, src/utils/
 - Niveau de la mer : y = 0
 - Clavier : toujours `event.code` (KeyW/KeyA/KeyS/KeyD = ZQSD en AZERTY),
   jamais `event.key`, pour que ça marche quel que soit le layout
+- Tactile (smartphone) : src/utils/TouchControls.js, activé si 'ontouchstart' /
+  maxTouchPoints > 0. Joystick virtuel à gauche -> faux keydown/keyup ZQSD dans
+  Input ; boutons à droite : TIR (mousedown), SAUT (Space), COURIR (Shift), E ;
+  glisser le doigt sur le canvas -> playerCamera.look(dx, dy). UI dans
+  index.html (#touch-ui, affichée via body.touch), viewport user-scalable=no
 - Delta time plafonné à 0.1 s dans la boucle de jeu
 
 ### Rendu (style rétro GTA III)

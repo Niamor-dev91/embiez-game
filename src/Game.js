@@ -17,6 +17,7 @@ import { DebugCamera } from './utils/DebugCamera.js';
 import { Input } from './utils/Input.js';
 import { resolveCircleVsCircle } from './utils/Collisions.js';
 import { Pickups } from './world/Pickups.js';
+import { TouchControls } from './utils/TouchControls.js';
 
 // Classe principale : renderer, scène, caméra, boucle d'animation.
 
@@ -37,6 +38,13 @@ export class Game {
     this.initScene();
     this.initCamera();
     this.initWorld();
+
+    // Contrôles tactiles (joystick + boutons) si écran tactile ; le glisser
+    // sur le canvas fait tourner la caméra via playerCamera.look()
+    this.touch = new TouchControls();
+    if (this.touch.active) {
+      this.touch.onLook = (dx, dy) => this.playerCamera.look(dx, dy);
+    }
 
     // Mode 'player' (3e personne) par défaut, F8 = bascule caméra de debug
     this.mode = 'player';
