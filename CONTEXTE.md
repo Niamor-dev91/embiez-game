@@ -380,7 +380,10 @@ src/world/, src/player/, src/vehicles/, src/npc/, src/utils/
   espacées), ramassées au contact (< pickupDistance), réapparition après
   respawnTime (30 s) ; message temporaire dans le HUD (Game.notice) ;
   + un pickup de chaque type fixe près du spawn (pickups.nearSpawn)
-- HUD : #hud affiche les PV + munitions + notices (index.html), viseur #crosshair au centre
+- HUD : #hud affiche les PV + munitions + notices (index.html), viseur #crosshair au centre.
+  Boussole en bas à droite (#compass) : aiguille rouge = cap de la caméra active
+  (0°=N, 90°=E ; suit la caméra debug en F8), texte "N 45°" — Game.updateCompass
+  appelé dans updateHud
 
 ### Collisions
 - src/utils/Collisions.js : cercle (position + rayon) contre les OBB des

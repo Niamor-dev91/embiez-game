@@ -38,6 +38,8 @@ export class Game {
     this.clock = new THREE.Clock();
     this.hud = document.getElementById('hud');
     this.gameOverEl = document.getElementById('gameover'); // overlay "GAME OVER" au KO
+    this.compassNeedle = document.getElementById('compass-needle'); // boussole bas droite
+    this.compassCap = document.getElementById('compass-cap');
     this.sound = new Sound(); // sons procéduraux (WebAudio)
     this.fireCooldown = 0;
     this.lastHud = '';
@@ -736,8 +738,23 @@ export class Game {
     this.updateHud();
   }
 
+  // Boussole en bas à droite : cap de la caméra active (0° = Nord, 90° = Est).
+  // Repère monde : x = est, z = -nord ; yaw caméra 0 regarde -Z = Nord.
+  updateCompass() {
+    if (!this.compassNeedle) return;
+    const yaw = this.mode === 'debug' ? this.debugCamera.yaw : this.playerCamera.yaw;
+    const cap = (((-yaw) % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2); // 0..2π, 0 = Nord
+    const deg = (cap * 180) / Math.PI;
+    this.compassNeedle.style.transform = 'rotate(' + deg.toFixed(1) + 'deg)';
+    if (this.compassCap) {
+      const dirs = ['N', 'NE', 'E', 'SE', 'S', 'SO', 'O', 'NO'];
+      this.compassCap.textContent = dirs[Math.round(deg / 45) % 8] + ' ' + Math.round(deg) + '°';
+    }
+  }
+
   // HUD : points de vie du joueur + infos (en haut à gauche)
   updateHud() {
+    this.updateCompass(); // la boussole tourne même si le texte HUD ne change pas
     let txt;
     if (this.touch && this.touch.setRespawnVisible) this.touch.setRespawnVisible(!this.player.alive);
     if (this.gameOverEl) this.gameOverEl.style.display = this.player.alive ? 'none' : 'flex'; // overlay GAME OVER

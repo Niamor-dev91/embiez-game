@@ -60,6 +60,48 @@
         z-index: 10;
       }
 
+      /* Boussole en bas à droite : cercle N/E/S/O + aiguille rouge = cap caméra */
+      #compass {
+        position: fixed;
+        right: 20px;
+        bottom: 20px;
+        width: 76px;
+        text-align: center;
+        pointer-events: none;
+        font-family: monospace;
+        color: #fff;
+        text-shadow: 1px 1px 0 #000;
+        z-index: 5;
+      }
+      #compass-rose {
+        position: relative;
+        width: 64px;
+        height: 64px;
+        margin: 0 auto;
+        border-radius: 50%;
+        background: rgba(0, 0, 0, 0.35);
+        border: 2px solid rgba(255, 255, 255, 0.6);
+      }
+      #compass-rose span {
+        position: absolute;
+        transform: translate(-50%, -50%);
+        font-size: 12px;
+        font-weight: bold;
+      }
+      #compass-needle {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 0;
+        height: 0;
+        margin: -27px 0 0 -6px;
+        transform-origin: 50% 100%; /* la BASE de l'aiguille reste au centre du cercle, c'est la POINTE qui tourne */
+        border-left: 6px solid transparent;
+        border-right: 6px solid transparent;
+        border-bottom: 26px solid #d82a2a; /* flèche vers le haut = Nord */
+      }
+      #compass-cap { margin-top: 4px; font-size: 13px; font-weight: bold; }
+
       /* Viseur au centre de l'écran */
       #crosshair {
         position: fixed;
@@ -135,6 +177,16 @@
     <div id="hud"></div>
     <div id="crosshair"></div>
     <div id="gameover">GAME OVER</div>
+    <div id="compass">
+      <div id="compass-rose">
+        <span style="left:50%;top:8px">N</span>
+        <span style="left:56px;top:50%">E</span>
+        <span style="left:50%;top:56px">S</span>
+        <span style="left:8px;top:50%">O</span>
+        <div id="compass-needle"></div>
+      </div>
+      <div id="compass-cap">N 0°</div>
+    </div>
     <!-- Contrôles tactiles (joystick + boutons), visibles si écran tactile -->
     <div id="touch-ui">
       <div id="joystick"><div id="joystick-knob"></div></div>
