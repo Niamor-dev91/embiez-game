@@ -443,8 +443,17 @@ export class Game {
       return;
     }
     if (this.player.money < s.price) {
-      this.notice = 'Pas assez d\'€ ! Gilet : ' + s.price + ' € (tu as ' + this.player.money + ' €)';
-      this.noticeTimer = 3.5;
+      // Le vendeur oriente le joueur vers la mission pastis : direction de la
+      // dame (client) par rapport au spawn, en 8 points cardinaux.
+      // Repère : +x = est, +z = sud (z = -nord)
+      const c = this.client.group.position;
+      const sp = CONFIG.player.spawn;
+      let a = Math.atan2(c.z - sp.z, c.x - sp.x); // 0 = est, croissant vers le sud
+      if (a < 0) a += Math.PI * 2;
+      const dirs = ['est', 'sud-est', 'sud', 'sud-ouest', 'ouest', 'nord-ouest', 'nord', 'nord-est'];
+      const dir = dirs[Math.round(a / (Math.PI / 4)) % 8];
+      this.notice = 'Pas assez d\'€ ! (' + this.player.money + ' € / ' + s.price + ' €) — la dame qui veut le pastis est au ' + dir + ' ! 🍾';
+      this.noticeTimer = 5;
       return;
     }
     this.player.money -= s.price;
