@@ -269,7 +269,8 @@ src/world/, src/player/, src/vehicles/, src/npc/, src/utils/
   (rechargent le revolver à fond) + pickups.healCount = 10 bouteilles de pastis
   (+pickups.healAmount PV), posées le long des routes OSM (seeded, sur terre,
   espacées), ramassées au contact (< pickupDistance), réapparition après
-  respawnTime (30 s) ; message temporaire dans le HUD (Game.notice)
+  respawnTime (30 s) ; message temporaire dans le HUD (Game.notice) ;
+  + un pickup de chaque type fixe près du spawn (pickups.nearSpawn)
 - HUD : #hud affiche les PV + munitions + notices (index.html), viseur #crosshair au centre
 
 ### Collisions

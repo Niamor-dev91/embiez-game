@@ -180,6 +180,11 @@ export const CONFIG = {
     ammoTrim: 0xd8c832,      // couvercle jaune
     bottleGlass: 0x4a8a5a,   // verre vert de la bouteille
     bottleColor: 0xd8a83a,   // liquide ambré (pastis)
+    // pickups fixes placés près du spawn (dx/dz en mètres) pour tester facilement
+    nearSpawn: [
+      { kind: 'ammo', dx: 4, dz: 3 },
+      { kind: 'heal', dx: -4, dz: -4 }, // de l'autre côté du spawn, loin de la voiturette garée
+    ],
   },
 
   // --- Décor (données OpenStreetMap, voir scripts/build-embiez-osm.mjs) ---

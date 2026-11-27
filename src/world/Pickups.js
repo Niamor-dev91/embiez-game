@@ -23,6 +23,25 @@ export class Pickups {
     const rand = mulberry32(777);
     this.spawn('ammo', CONFIG.pickups.ammoCount, rand);
     this.spawn('heal', CONFIG.pickups.healCount, rand);
+    this.spawnNearSpawn();
+  }
+
+  // Un pickup de chaque type fixe près du point d'apparition du joueur
+  spawnNearSpawn() {
+    const s = CONFIG.player.spawn;
+    for (const sp of CONFIG.pickups.nearSpawn) {
+      let x = s.x + sp.dx;
+      let z = s.z + sp.dz;
+      // chercher un point sur terre à proximité (pas dans l'eau)
+      let guard = 0;
+      while (this.ground.heightAt(x, z) < 0.3 && guard++ < 20) { x += 1.5; z += 1.5; }
+      if (this.list.some((q) => Math.hypot(q.pos.x - x, q.pos.z - z) < 4)) continue;
+      const mesh = sp.kind === 'ammo' ? this.buildAmmoBox() : this.buildBottle();
+      mesh.position.set(x, this.ground.heightAt(x, z) + 0.2, z);
+      this.scene.add(mesh);
+      this.list.push({ kind: sp.kind, mesh, pos: { x, z }, taken: 0 });
+      console.log('[Pickups] près du spawn :', sp.kind, 'à (' + x.toFixed(1) + ', ' + z.toFixed(1) + ')');
+    }
   }
 
   spawn(kind, count, rand) {
