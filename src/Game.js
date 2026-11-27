@@ -571,14 +571,21 @@ export class Game {
     this.client.update(delta, this.player);
     if (this.shop) this.shop.keeper.update(delta, this.player);
     this.heli.update(delta, this.player, this.wanted);
-    // Son continu : rotor de l'hélicoptère quand il est actif (atténué avec la distance)
-    if (this.heli.state === 'active' && this.player.alive) {
-      this.sound.heliOn();
+    // Son continu : rotor d'hélicoptère (même son que la police). Piloté par le
+    // joueur = plein volume ; hélicoptère de police actif = volume selon la distance.
+    let heliVol = 0;
+    if (this.vehicle === this.heliVehicle && this.player.alive) {
+      heliVol = 1; // on est à bord de l'hélicoptère civil
+    } else if (this.heli.state === 'active' && this.player.alive) {
       const hd = Math.hypot(
         this.heli.pos.x - this.player.group.position.x,
         this.heli.pos.z - this.player.group.position.z
       );
-      this.sound.setHeli(1 - hd / 220);
+      heliVol = Math.max(0, 1 - hd / 220);
+    }
+    if (heliVol > 0) {
+      this.sound.heliOn();
+      this.sound.setHeli(heliVol);
     } else {
       this.sound.heliOff();
     }

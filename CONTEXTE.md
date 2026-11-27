@@ -67,7 +67,9 @@ src/world/, src/player/, src/vehicles/, src/npc/, src/utils/
   procédural ne convainquait pas, et aucun asset GTA III embarquable pour
   copyright ; engineOn/setEngine restent prêts si sound.engine = true),
   éteint à la sortie/panne/KO) ; rotor d'hélico en boucle quand actif (bruit + LFO
-  carré 11 Hz = "wop wop", volume selon la distance) ; crash() = grosse explosion
+  carré 11 Hz = "wop wop") ; quand le joueur PILOTE l'hélicoptère civil, même
+  rotor à PLEIN volume (prioritaire sur celui de la police ; police = volume
+  selon la distance) ; crash() = grosse explosion
   (bruit grave + sine 70->24 Hz + débris) jouée à l'impact au sol de l'hélico ;
   AudioContext débloqué au 1er
   clic/touche (autoplay policy). Sans WebAudio (test Node) : son désactivé sans
