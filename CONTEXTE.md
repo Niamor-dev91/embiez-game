@@ -244,14 +244,19 @@ src/world/, src/player/, src/vehicles/, src/npc/, src/utils/
   HUD affiche 'Revolver : X/6' ou 'RECHARGEMENT…'
 - PNJ : 3 PV ; touché -> state 'flee' (fuit le joueur à fleeSpeed, se calme
   à fleeDistance) ; à 0 PV -> allongé au sol (state 'dead')
-- PNJ policier (combat.policeCount = 3, look bleu foncé npc.policeColors,
+- PNJ policier (combat.policeCount = 5, look bleu foncé npc.policeColors,
   placés via pickPoliceRoads sur les chemins les plus proches du centre =
   le village) : 5 PV, pistolet visible ; alerté
   quand le joueur tire sur un PNJ -> poursuit le joueur jusqu'à
   policeStopDistance puis tire (policeRange, policeHitChance,
   policeFireInterval) -> joueur -1 PV
 - Mort du joueur : HUD 'KO ! R pour réapparaître', respawn au spawn avec PV max
-- HUD : #hud affiche les PV (index.html), viseur #crosshair au centre
+- Pickups (src/world/Pickups.js) : pickups.ammoCount = 10 boîtes de munitions
+  (rechargent le revolver à fond) + pickups.healCount = 10 bouteilles de pastis
+  (+pickups.healAmount PV), posées le long des routes OSM (seeded, sur terre,
+  espacées), ramassées au contact (< pickupDistance), réapparition après
+  respawnTime (30 s) ; message temporaire dans le HUD (Game.notice)
+- HUD : #hud affiche les PV + munitions + notices (index.html), viseur #crosshair au centre
 
 ### Collisions
 - src/utils/Collisions.js : cercle (position + rayon) contre les OBB des

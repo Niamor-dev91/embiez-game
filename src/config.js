@@ -125,7 +125,7 @@ export const CONFIG = {
     playerHp: 10,            // points de vie du joueur
     npcHp: 3,                // points de vie d'un PNJ
     policeHp: 5,             // points de vie du PNJ policier
-    policeCount: 3,          // nombre de policiers (placés près du village)
+    policeCount: 5,          // nombre de policiers (placés près du village)
     damagePerShot: 1,        // dégâts d'une balle
     playerFireRange: 120,    // portée du tir joueur (m)
     playerFireCooldown: 0.5, // secondes entre deux tirs du revolver (voir weapon.revolver.cooldown)
@@ -158,6 +158,19 @@ export const CONFIG = {
       legs: 0x14142a,
       arms: 0x1a2a6a,
     },
+  },
+
+  // --- Pickups (munitions + pastis) ---
+  pickups: {
+    ammoCount: 10,           // boîtes de munitions sur la map (rechargent le revolver)
+    healCount: 10,           // bouteilles de pastis sur la map (soignent le joueur)
+    pickupDistance: 1.4,     // distance de ramassage (m)
+    respawnTime: 30,         // réapparition après ramassage (s)
+    healAmount: 3,           // PV rendus par une bouteille de pastis
+    ammoColor: 0x5a6a3a,     // boîte de munitions kaki
+    ammoTrim: 0xd8c832,      // couvercle jaune
+    bottleGlass: 0x4a8a5a,   // verre vert de la bouteille
+    bottleColor: 0xd8a83a,   // liquide ambré (pastis)
   },
 
   // --- Décor (données OpenStreetMap, voir scripts/build-embiez-osm.mjs) ---

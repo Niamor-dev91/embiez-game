@@ -16,6 +16,7 @@ import { Boat, dockSpots } from './vehicles/Boat.js';
 import { DebugCamera } from './utils/DebugCamera.js';
 import { Input } from './utils/Input.js';
 import { resolveCircleVsCircle } from './utils/Collisions.js';
+import { Pickups } from './world/Pickups.js';
 
 // Classe principale : renderer, scène, caméra, boucle d'animation.
 
@@ -29,6 +30,8 @@ export class Game {
     this.lastHud = '';
     this.vehicle = null; // véhicule actif (car ou boat), null = à pied
     this.eHeld = false;  // détection de front montant pour la touche E
+    this.notice = '';    // message temporaire (pickup ramassé...)
+    this.noticeTimer = 0;
 
     this.initRenderer();
     this.initScene();
@@ -104,6 +107,9 @@ export class Game {
     this.vegetation = new Vegetation(this.scene, this.terrain);
     // Sol solide : terrain + pontons du port (le perso marche DESSUS)
     this.ground = new Ground(this.terrain, this.roads);
+
+    // Pickups : boîtes de munitions + bouteilles de pastis sur la map
+    this.pickups = new Pickups(this.scene, this.ground);
     this.player = new Player(this.scene, this.ground, this.buildings.colliders);
     this.player.group.visible = false; // FPS : le perso est caché, l'arme = view model revolver
     this.playerCamera = new PlayerCamera(this.canvas, this.camera, this.player, this.ground);
@@ -196,6 +202,14 @@ export class Game {
       }
       this.revolver.group.visible = !this.vehicle;
       this.revolver.update(delta);
+
+      // Ramassage des pickups (munitions / pastis) au contact
+      const msg = this.pickups.update(delta, this.player.group.position, this.player, this.revolver);
+      if (msg) {
+        this.notice = msg;
+        this.noticeTimer = 2.5;
+      }
+      if (this.noticeTimer > 0) this.noticeTimer -= delta;
       // Respawn après un KO
       if (!this.player.alive && Input.isDown('KeyR')) this.player.respawn();
 
@@ -291,6 +305,7 @@ export class Game {
         }
       }
     }
+    if (this.noticeTimer > 0 && this.player.alive) txt += '   |   ' + this.notice;
     if (txt !== this.lastHud) {
       this.hud.textContent = txt;
       this.lastHud = txt;
