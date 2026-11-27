@@ -6,7 +6,7 @@
 // Manette (mapping standard W3C "Xbox"), relue chaque frame par pollGamepad() :
 //   stick gauche = ZQSD (déplacement à pied / conduite)
 //   stick droit  = caméra (Input.lookX / lookY, consommé par PlayerCamera)
-//   A (0) = saut (Space), B (1) = courir (Shift), X (2) = E (interagir),
+//   A (0) = saut (Space), LT (6) ou LB (4) = courir (Shift), X (2) = E (interagir),
 //   View/Back (8) = R (respawn), RT (7) ou RB (5) = tir (clic souris)
 
 const keys = {};
@@ -37,7 +37,8 @@ export const Input = {
         case 'KeyD': return ax[0] > PAD_DEADZONE;
         case 'Space': return !!(b[0] && b[0].pressed);     // A = saut
         case 'ShiftLeft':
-        case 'ShiftRight': return !!(b[1] && b[1].pressed); // B = courir
+        case 'ShiftRight': return !!((b[6] && b[6].pressed)  // LT = courir
+          || (b[4] && b[4].pressed));                          // LB = courir
         case 'KeyE': return !!(b[2] && b[2].pressed);       // X = interagir
         case 'KeyR': return !!(b[8] && b[8].pressed);       // View = respawn
         case 'KeyF': return !!(b[5] && b[5].pressed);       // RB = tirer
