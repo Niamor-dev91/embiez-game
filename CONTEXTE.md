@@ -301,9 +301,13 @@ src/world/, src/player/, src/vehicles/, src/npc/, src/utils/
   redeployDelay. Projecteur de recherche allumé la nuit (setSearchlight).
   Respawn du joueur (R) : wanted = false + hélico despawn. HUD : '⚠ RECHERCHÉ'
   + PV de l'hélico quand il est actif
-- Mort du joueur : HUD 'KO ! R pour réapparaître' (bouton R tactile sur mobile),
-  respawn au spawn avec PV max ; KO en véhicule = plus de conduite possible
-  (vehicle.update(delta, player.alive) : voiture/bateau immobilisés)
+- Mort du joueur : overlay plein écran 'GAME OVER' (#gameover, display flex via
+  Game.updateHud) + HUD 'KO ! R pour réapparaître' (bouton R tactile sur mobile) ;
+  R = restart() COMPLET : spawn + PV max, revolver 6/6 + stock 30, PNJ recréés
+  (mêmes seeds), pickups réapparus, voiturette/bateaux remis à leur place,
+  wanted=false + hélico despawn, timeOfDay remis au matin ; KO en véhicule =
+  plus de conduite possible (vehicle.update(delta, player.alive)) et la
+  position du joueur suit le véhicule (l'hélico/policiers poursuivent la voiture)
 - Pickups (src/world/Pickups.js) : pickups.ammoCount = 10 boîtes de munitions
   (rechargent le revolver à fond) + pickups.healCount = 10 bouteilles de pastis
   (+pickups.healAmount PV), posées le long des routes OSM (seeded, sur terre,

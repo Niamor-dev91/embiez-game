@@ -43,6 +43,23 @@
         text-shadow: 1px 1px 0 #000;
       }
 
+      /* Écran "GAME OVER" en gros au KO (affiché via Game.updateHud) */
+      #gameover {
+        position: fixed;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        font-family: monospace;
+        font-size: 14vw;
+        font-weight: bold;
+        letter-spacing: 0.08em;
+        color: #d82a1a;
+        text-shadow: 5px 5px 0 #000;
+        pointer-events: none;
+        z-index: 10;
+      }
+
       /* Viseur au centre de l'écran */
       #crosshair {
         position: fixed;
@@ -117,6 +134,7 @@
     <canvas id="game-canvas"></canvas>
     <div id="hud"></div>
     <div id="crosshair"></div>
+    <div id="gameover">GAME OVER</div>
     <!-- Contrôles tactiles (joystick + boutons), visibles si écran tactile -->
     <div id="touch-ui">
       <div id="joystick"><div id="joystick-knob"></div></div>

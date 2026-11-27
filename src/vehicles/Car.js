@@ -25,6 +25,7 @@ export class Car {
     this.group = new THREE.Group();
     this.group.rotation.order = 'YXZ'; // yaw d'abord, puis pitch/roll
     this.createMesh();
+    this.park = park; // position de départ (pour reset après un KO)
     this.group.position.set(park.x, ground.heightAt(park.x, park.z), park.z);
     this.group.rotation.y = park.yaw;
     scene.add(this.group);
@@ -119,6 +120,17 @@ export class Car {
   setHeadlights(on) {
     const i = on ? CONFIG.dayNight.headlightIntensity : 0;
     for (const s of this.headlights) s.intensity = i;
+  }
+
+  // Remise à la position de départ, non en panne (restart après un KO)
+  reset() {
+    this.speed = 0;
+    this.waterTime = 0;
+    this.broken = false;
+    this.pitch = 0;
+    this.roll = 0;
+    this.group.position.set(this.park.x, this.ground.heightAt(this.park.x, this.park.z), this.park.z);
+    this.group.rotation.set(0, this.park.yaw, 0);
   }
 
   update(delta, alive = true) {

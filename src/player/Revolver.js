@@ -93,6 +93,16 @@ export class Revolver {
     return this.reloading > 0;
   }
 
+  // Remise à zéro de l'arme (restart de la partie après un KO)
+  reset() {
+    this.ammo = this.maxAmmo;
+    this.reserve = this.maxReserve;
+    this.reloading = 0;
+    this.recoil = 0;
+    this.group.position.z = this.cfg.viewPos.z;
+    this.group.rotation.x = 0;
+  }
+
   update(delta) {
     // Recul du tir (ressort)
     this.recoil = Math.max(0, this.recoil - delta * 5);

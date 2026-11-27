@@ -112,6 +112,14 @@ export class Pickups {
     return g;
   }
 
+  // Tous les pickups réapparaissent (restart de la partie après un KO)
+  reset() {
+    for (const it of this.list) {
+      it.taken = 0;
+      it.mesh.visible = true;
+    }
+  }
+
   // Ramassage au contact + respawn. Renvoie un message HUD ou null.
   update(delta, playerPos, player, revolver) {
     const p = CONFIG.pickups;

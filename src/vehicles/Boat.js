@@ -52,6 +52,7 @@ export class Boat {
     this.group = new THREE.Group();
     this.createMesh();
     // Flotte sur la mer (un peu au-dessus du niveau 0)
+    this.dock = dock; // amarrage de départ (pour reset après un KO)
     this.group.position.set(dock.x, CONFIG.boat.floatHeight, dock.z);
     this.group.rotation.y = dock.yaw;
     scene.add(this.group);
@@ -106,6 +107,13 @@ export class Boat {
       this.hull.add(coque, guidon, mat2);
     }
     addOutline(this.hull, 1.08, CONFIG.props.outlineColor);
+  }
+
+  // Remis à son amarrage de départ (restart après un KO)
+  reset() {
+    this.speed = 0;
+    this.group.position.set(this.dock.x, CONFIG.boat.floatHeight, this.dock.z);
+    this.group.rotation.y = this.dock.yaw;
   }
 
   update(delta, alive = true) {

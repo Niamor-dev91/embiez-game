@@ -31,6 +31,7 @@ export class Game {
     this.canvas = canvas;
     this.clock = new THREE.Clock();
     this.hud = document.getElementById('hud');
+    this.gameOverEl = document.getElementById('gameover'); // overlay "GAME OVER" au KO
     this.fireCooldown = 0;
     this.lastHud = '';
     this.vehicle = null; // véhicule actif (car ou boat), null = à pied
@@ -159,6 +160,7 @@ export class Game {
     this.pickups = new Pickups(this.scene, this.ground);
     // Colliders solides : bâtiments + troncs des pins
     const colliders = [...this.buildings.colliders, ...this.vegetation.colliders];
+    this.colliders = colliders; // réutilisé au restart (recréation des PNJ)
     this.player = new Player(this.scene, this.ground, colliders);
     this.player.group.visible = false; // FPS : le perso est caché, l'arme = view model revolver
     this.playerCamera = new PlayerCamera(this.canvas, this.camera, this.player, this.ground);
@@ -244,6 +246,33 @@ export class Game {
     this.player.group.position.set(px, this.ground.heightAt(px, pz), pz);
   }
 
+  // --- Restart complet après un KO (touche R) : le monde est remis à zéro ---
+  restart() {
+    if (this.vehicle) this.exitVehicle();
+    this.player.respawn();   // retour au spawn, PV max
+    this.revolver.reset();   // chargeur plein + stock de balles max
+    this.wanted = false;     // recherche levée
+    this.heli.despawn();
+    // PNJ recréés aux positions initiales (mêmes seeds -> mêmes chemins)
+    for (const n of this.npcs) this.scene.remove(n.group);
+    const roads = pickRoads(CONFIG.npc.count);
+    const policeRoads = pickPoliceRoads(CONFIG.combat.policeCount, roads);
+    this.npcs = [];
+    for (let i = 0; i < CONFIG.npc.count; i++) {
+      this.npcs.push(new Npc(this.scene, this.ground, this.colliders, roads[i], i, false));
+    }
+    for (let i = 0; i < CONFIG.combat.policeCount; i++) {
+      this.npcs.push(new Npc(this.scene, this.ground, this.colliders, policeRoads[i], 100 + i, true));
+    }
+    // Pickups, voiturette et bateaux remis en place
+    this.pickups.reset();
+    this.car.reset();
+    for (const b of this.boats) b.reset();
+    this.timeOfDay = 0.3; // retour au matin
+    this.notice = '';
+    this.noticeTimer = 0;
+  }
+
   // --- Cycle jour/nuit : 12 min de soleil puis 12 min de lune ---
   updateDayNight(delta) {
     const d = CONFIG.dayNight;
@@ -305,6 +334,11 @@ export class Game {
   update(delta) {
     this.updateDayNight(delta);
     this.sea.update(delta);
+    // En véhicule, la position du joueur suit le véhicule : l'hélico et les
+    // policiers poursuivent la voiture, pas le point où on est monté
+    if (this.vehicle) {
+      this.player.group.position.set(this.vehicle.pos.x, this.vehicle.pos.y, this.vehicle.pos.z);
+    }
     for (const npc of this.npcs) npc.update(delta, this.player);
     this.heli.update(delta, this.player, this.wanted);
     if (this.mode === 'debug') {
@@ -335,12 +369,8 @@ export class Game {
         this.noticeTimer = 2.5;
       }
       if (this.noticeTimer > 0) this.noticeTimer -= delta;
-      // Respawn après un KO
-      if (!this.player.alive && Input.isDown('KeyR')) {
-        this.player.respawn();
-        this.wanted = false; // la recherche est levée au respawn
-        this.heli.despawn();
-      }
+      // R au KO : repartir du début (monde remis à zéro)
+      if (!this.player.alive && Input.isDown('KeyR')) this.restart();
 
       // Entrer/sortir d'un véhicule (E, front montant) : le plus proche
       const eDown = Input.isDown('KeyE');
@@ -420,6 +450,7 @@ export class Game {
   updateHud() {
     let txt;
     if (this.touch && this.touch.setRespawnVisible) this.touch.setRespawnVisible(!this.player.alive);
+    if (this.gameOverEl) this.gameOverEl.style.display = this.player.alive ? 'none' : 'flex'; // overlay GAME OVER
     if (!this.player.alive) {
       txt = this.touch && this.touch.active
         ? 'KO ! Touche le bouton R pour réapparaître'
