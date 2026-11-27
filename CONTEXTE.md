@@ -210,6 +210,15 @@ src/world/, src/player/, src/vehicles/, src/npc/, src/utils/
   (player/debug), avec le joueur passé en paramètre : le PNJ est repoussé
   si le joueur le percute
 
+### Voitures en circulation (trafic)
+- src/vehicles/TrafficCar.js : traffic.count = 2 voitures qui suivent les plus
+  grosses routes OSM (pickTrafficRoads : kinds primary/secondary/unclassified/
+  residential/service, longueur >= traffic.minRoadLength) en arc-length
+  (s avance à traffic.speed, demi-tour aux extrémités) ; caisse colorée +
+  outline toon, roues qui tournent, tilt selon la pente comme la voiturette
+- Collisions : bâtiments/arbres bloquent les voitures de trafic ; le joueur,
+  les PNJ et la voiturette garée les font dévier (elles cèdent)
+
 ### Voiturette électrique (étape 5)
 - src/vehicles/Car.js : caisse + habitacle + 4 roues (qui tournent),
   conduite arcade (W accélère, S frein/marche arrière, A/D tourne seulement

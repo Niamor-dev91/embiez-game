@@ -80,6 +80,15 @@ export const CONFIG = {
   },
 
   // --- Voiturette électrique ---
+  // --- voitures en circulation (trafic) ---
+  traffic: {
+    count: 2,                // nombre de voitures en circulation
+    speed: 9,                // vitesse (m/s)
+    minRoadLength: 100,      // seules les grosses routes de l'île (m)
+    kinds: ['primary', 'secondary', 'unclassified', 'residential', 'service'],
+    colors: [0xd84a2a, 0x2a6ad8], // rouge vif, bleu vif (style toon)
+  },
+
   vehicle: {
     bodyColor: 0xf0c020,     // carrosserie jaune vif
     cabinColor: 0xfff0a0,    // habitacle

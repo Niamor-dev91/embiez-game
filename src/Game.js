@@ -12,6 +12,7 @@ import { PlayerCamera } from './player/PlayerCamera.js';
 import { Revolver } from './player/Revolver.js';
 import { Npc, pickRoads, pickPoliceRoads, nearestRoadPoint } from './npc/Npc.js';
 import { Car } from './vehicles/Car.js';
+import { TrafficCar, pickTrafficRoads } from './vehicles/TrafficCar.js';
 import { Boat, dockSpots } from './vehicles/Boat.js';
 import { DebugCamera } from './utils/DebugCamera.js';
 import { Input } from './utils/Input.js';
@@ -149,6 +150,11 @@ export class Game {
     park.z += Math.cos(park.yaw) * 6;
     this.car = new Car(this.scene, this.ground, colliders, park);
 
+    // 2 voitures en circulation sur les plus grosses routes de l'île
+    this.traffic = pickTrafficRoads(CONFIG.traffic.count).map((r, i) =>
+      new TrafficCar(this.scene, this.ground, colliders, r, CONFIG.traffic.colors[i % CONFIG.traffic.colors.length], 500 + i)
+    );
+
     // Bateaux amarrés aux pontons du port (voilier, moteur, jetski)
     const spots = dockSpots(CONFIG.boat.types.length, this.ground, s);
     this.boats = CONFIG.boat.types.map((t, i) =>
@@ -279,8 +285,21 @@ export class Game {
           );
         }
       }
+      // Voitures en circulation : le joueur, les PNJ et la voiturette garée
+      // les font dévier (elles cèdent) ; bloquées par bâtiments/arbres
+      for (const tc of this.traffic) {
+        if (this.player.alive && !this.vehicle) {
+          resolveCircleVsCircle(tc.pos, tc.radius, this.player.group.position, CONFIG.player.radius);
+        }
+        for (const npc of this.npcs) {
+          if (npc.hp > 0) resolveCircleVsCircle(tc.pos, tc.radius, npc.group.position, CONFIG.npc.radius);
+        }
+        if (!this.vehicle) resolveCircleVsCircle(tc.pos, tc.radius, this.car.pos, CONFIG.vehicle.radius);
+      }
       this.playerCamera.update(delta);
     }
+    // Les voitures de circulation avancent dans TOUS les modes (même debug F8)
+    for (const tc of this.traffic) tc.update(delta);
     this.updateHud();
   }
 

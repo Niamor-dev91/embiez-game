@@ -10,7 +10,10 @@ const DEAD = 0.22;     // zone morte du joystick
 export class TouchControls {
 
   constructor() {
-    this.active = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+    // Tactile uniquement si le pointeur principal est "coarse" (doigt) :
+    // évite de montrer l'UI sur un PC avec écran tactile (pointer: fine)
+    const coarse = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
+    this.active = coarse && ('ontouchstart' in window || navigator.maxTouchPoints > 0);
     this.onLook = null; // callback (dx, dy) -> caméra
     if (!this.active) return;
 
