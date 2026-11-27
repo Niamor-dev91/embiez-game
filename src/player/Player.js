@@ -37,8 +37,9 @@ export class Player {
     this.group = this.humanoid.group;
   }
 
-  // Tir hitscan depuis la caméra vers l'avant ; renvoie le PNJ touché ou null
-  shoot(npcs, camera) {
+  // Tir hitscan depuis la caméra vers l'avant ; cibles = PNJ + hélicoptère de
+  // police s'il est actif. Renvoie la cible touchée (PNJ ou hélico), ou null.
+  shoot(npcs, camera, heli = null) {
     const c = CONFIG.combat;
     const origin = camera.position;
     const dir = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
@@ -48,9 +49,19 @@ export class Player {
         npc: n,
         pos: { x: n.group.position.x, y: n.group.position.y + 1.0, z: n.group.position.z },
       }));
+    if (heli && heli.hp > 0 && heli.state === 'active') {
+      targets.push({
+        heli,
+        pos: { x: heli.pos.x, y: heli.pos.y, z: heli.pos.z },
+        radius: CONFIG.policeHeli.targetRadius,
+      });
+    }
     const hit = fireHitscan(origin, dir, targets, c.targetRadius, c.playerFireRange);
-    if (hit) hit.npc.takeDamage(c.damagePerShot, this.group.position);
-    return hit ? hit.npc : null;
+    if (hit) {
+      if (hit.npc) hit.npc.takeDamage(c.damagePerShot, this.group.position);
+      else if (hit.heli) hit.heli.takeDamage(c.damagePerShot);
+    }
+    return hit ? hit.npc || hit.heli : null;
   }
 
   takeDamage(dmg) {

@@ -287,6 +287,19 @@ src/world/, src/player/, src/vehicles/, src/npc/, src/utils/
   quand le joueur tire sur un PNJ -> poursuit le joueur jusqu'à
   policeStopDistance puis tire (policeRange, policeHitChance,
   policeFireInterval) -> joueur -1 PV
+- Hélicoptère de police (src/vehicles/PoliceHelicopter.js, params policeHeli) :
+  inactif tant que le joueur n'est pas recherché ; toucher un PNJ met
+  Game.wanted = true -> l'hélico arrive par les airs (spawnDistance,
+  spawnAltitude), vole en orbite à hoverAltitude (28 m) au-dessus du joueur et
+  lui tire des rafales (fireInterval, range, hitChance, damage, tracer jaune
+  ~0.1 s, ligne de vue bloquée par le terrain via hasLineOfSight). 15 PV
+  (policeHeli.hp), ciblable par le revolver (targetRadius 2.6 m, portée joueur
+  120 m) ; à 0 PV il tombe en vrille (falling) jusqu'au sol/eau puis brûle
+  (burning : flammes + fumée + PointLight orange) burnDuration s, puis
+  disparaît ; si toujours recherché, un nouvel hélico arrive après
+  redeployDelay. Projecteur de recherche allumé la nuit (setSearchlight).
+  Respawn du joueur (R) : wanted = false + hélico despawn. HUD : '⚠ RECHERCHÉ'
+  + PV de l'hélico quand il est actif
 - Mort du joueur : HUD 'KO ! R pour réapparaître', respawn au spawn avec PV max
 - Pickups (src/world/Pickups.js) : pickups.ammoCount = 10 boîtes de munitions
   (rechargent le revolver à fond) + pickups.healCount = 10 bouteilles de pastis

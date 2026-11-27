@@ -16,7 +16,8 @@ export function fireHitscan(origin, dir, targets, radius = 0.7, range = 100) {
     const py = origin.y + dir.y * tProj;
     const pz = origin.z + dir.z * tProj;
     const d = Math.hypot(t.pos.x - px, t.pos.y - py, t.pos.z - pz);
-    if (d < radius && tProj < bestT) {
+    const r = t.radius ?? radius; // une cible peut définir son propre rayon
+    if (d < r && tProj < bestT) {
       best = t;
       bestT = tProj;
     }

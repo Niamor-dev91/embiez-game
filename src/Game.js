@@ -14,6 +14,8 @@ import { Npc, pickRoads, pickPoliceRoads, nearestRoadPoint } from './npc/Npc.js'
 import { Car } from './vehicles/Car.js';
 import { TrafficCar, pickTrafficRoads } from './vehicles/TrafficCar.js';
 import { Boat, dockSpots } from './vehicles/Boat.js';
+
+import { PoliceHelicopter } from './vehicles/PoliceHelicopter.js';
 import { DebugCamera } from './utils/DebugCamera.js';
 import { Input } from './utils/Input.js';
 import { resolveCircleVsCircle } from './utils/Collisions.js';
@@ -196,6 +198,11 @@ export class Game {
     this.boats = CONFIG.boat.types.map((t, i) =>
       new Boat(this.scene, this.ground, { ...spots[i], type: t })
     );
+
+    // Hélicoptère de police : inactif au départ, appelé quand le joueur est
+    // recherché (il a tiré sur un PNJ)
+    this.wanted = false;
+    this.heli = new PoliceHelicopter(this.scene, this.ground);
   }
 
   // --- Véhicules (voiturette + bateaux) : entrer / sortir avec E ---
@@ -289,6 +296,7 @@ export class Game {
     // Phares des voitures allumés la nuit + 1 fenêtre sur 5 allumée dans les bâtiments
     if (this.car.setHeadlights) this.car.setHeadlights(this.isNight);
     for (const tc of this.traffic) if (tc.setHeadlights) tc.setHeadlights(this.isNight);
+    if (this.heli.setSearchlight) this.heli.setSearchlight(this.isNight && this.heli.state === 'active');
     this.buildings.setWindowsLit(this.isNight);
   }
 
@@ -298,6 +306,7 @@ export class Game {
     this.updateDayNight(delta);
     this.sea.update(delta);
     for (const npc of this.npcs) npc.update(delta, this.player);
+    this.heli.update(delta, this.player, this.wanted);
     if (this.mode === 'debug') {
       this.debugCamera.update(delta);
     } else {
@@ -307,9 +316,12 @@ export class Game {
       if (this.player.alive && !this.vehicle && (Input.mouseDown || Input.isDown('KeyF')) && this.fireCooldown <= 0) {
         if (this.revolver.tryShoot()) { // consomme une balle (6 max), rechargement auto si vide
           this.fireCooldown = CONFIG.weapon.revolver.cooldown;
-          const target = this.player.shoot(this.npcs, this.camera);
-          if (target) {
+          const target = this.player.shoot(this.npcs, this.camera, this.heli);
+          if (target && !target.isHelicopter) {
+            // Toucher un PNJ alerte les policiers ET rend le joueur recherché
+            // -> l'hélicoptère de police intervient
             for (const n of this.npcs) if (n.isPolice) n.alerted = true;
+            this.wanted = true;
           }
         }
       }
@@ -324,7 +336,11 @@ export class Game {
       }
       if (this.noticeTimer > 0) this.noticeTimer -= delta;
       // Respawn après un KO
-      if (!this.player.alive && Input.isDown('KeyR')) this.player.respawn();
+      if (!this.player.alive && Input.isDown('KeyR')) {
+        this.player.respawn();
+        this.wanted = false; // la recherche est levée au respawn
+        this.heli.despawn();
+      }
 
       // Entrer/sortir d'un véhicule (E, front montant) : le plus proche
       const eDown = Input.isDown('KeyE');
@@ -412,6 +428,8 @@ export class Game {
           + ' | stock ' + this.revolver.reserve + '/' + this.revolver.maxReserve
           + (this.revolver.ammo === 0 && this.revolver.reserve === 0 ? ' VIDE !' : '');
       txt = 'PV : ' + this.player.hp + '/' + CONFIG.combat.playerHp + '   |   ' + ammoTxt + '   |   clic ou F = tirer';
+      if (this.wanted) txt += '   |   ⚠ RECHERCHÉ';
+      if (this.heli.state === 'active') txt += '   |   hélico ' + this.heli.hp + '/' + this.heli.maxHp + ' PV';
       if (this.vehicle) {
         const pan = this.vehicle === this.car && this.car.broken
           ? "   |   PANNE ! (trop longtemps dans l'eau)"

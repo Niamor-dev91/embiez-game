@@ -154,6 +154,35 @@ export const CONFIG = {
     gunColor: 0x222222,
   },
 
+  // --- Hélicoptère de police (arrive quand le joueur est recherché) ---
+  policeHeli: {
+    hp: 15,                 // points de vie de l'hélicoptère
+    spawnDistance: 260,     // distance d'apparition par rapport au joueur (m)
+    spawnAltitude: 70,      // altitude de départ au-dessus du sol (m)
+    hoverAltitude: 28,      // hauteur de vol au-dessus du sol (m)
+    speed: 22,              // vitesse horizontale vers le joueur (m/s)
+    orbitRadius: 7,         // rayon de l'orbite autour du joueur (m)
+    orbitSpeed: 0.45,       // vitesse angulaire de l'orbite (rad/s)
+    fireInterval: 1.0,      // secondes entre deux rafales
+    range: 160,             // portée de tir (m)
+    hitChance: 0.35,        // probabilité de toucher le joueur par rafale
+    damage: 1,              // dégâts d'une rafale sur le joueur
+    targetRadius: 2.6,      // rayon de la cible pour le tir du joueur (m)
+    fallGravity: 12,        // gravité pendant la chute (m/s²)
+    burnDuration: 20,       // durée du feu au sol avant disparition (s)
+    redeployDelay: 45,      // délai avant un nouvel hélicoptère si toujours recherché (s)
+    searchlightIntensity: 400, // projecteur de recherche la nuit (candela)
+    colors: {
+      body: 0x2a4a8a,       // fuselage bleu police
+      dark: 0x1a2a4a,       // queue / dérive
+      glass: 0x9fc8e8,      // vitres
+      stripe: 0xffffff,     // bande blanche
+      rotor: 0x222228,      // pales du rotor
+      skid: 0x333338,       // patins
+      beacon: 0xff2a2a,     // gyrophare
+    },
+  },
+
   // --- PNJ (touristes qui marchent sur les routes OSM) ---
   npc: {
     count: 40,               // nombre de PNJ (chacun sur un chemin différent)
