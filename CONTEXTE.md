@@ -199,7 +199,11 @@ src/world/, src/player/, src/vehicles/, src/npc/, src/utils/
 - Caméra joueur (src/player/PlayerCamera.js) : FPS à pied (caméra aux yeux,
   playerCamera.eyeHeight, yaw/pitch souris pointer lock ou flèches, pitch
   libre [-1.45, 1.45]) ; 3e personne en véhicule (orbite, lerp, ne traverse
-  pas le sol). En FPS le mesh du joueur est caché (visible = false).
+  pas le sol). En véhicule (voiture FPV + bateaux 3e pers.), la caméra revient
+  progressivement sur l'AXE du véhicule (yaw cible = yaw véhicule + π, lerp
+  vehicleYawLerp) SAUF si la vue a été bougée récemment (souris/flèches/toucher
+  -> lastLook, délai vehicleYawFollowDelay) : le manuel est prioritaire. En FPS
+  le mesh du joueur est caché (visible = false).
   Game passe le yaw au joueur pour un déplacement relatif à la caméra
 - Caméra de debug libre (src/utils/DebugCamera.js) : ZQSD + souris
   (pointer lock au clic) ou flèches, Espace/Ctrl = monter/descendre,

@@ -62,6 +62,8 @@ export const CONFIG = {
     keyTurnSpeed: 2.5,       // radians par seconde (flèches)
     minPitch: -1.45,         // FPS : on peut regarder en haut/bas
     maxPitch: 1.45,
+    vehicleYawFollowDelay: 1.5, // en véhicule : s après le dernier mouvement de vue avant de re-suivre l'axe du véhicule
+    vehicleYawLerp: 8,          // vitesse de rattrapage de l'axe du véhicule (1/s)
   },
   weapon: {
     revolver: {

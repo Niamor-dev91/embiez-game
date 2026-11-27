@@ -21,6 +21,8 @@ export class PlayerCamera {
     this.yaw = 0;
     this.pitch = 0.35;
     this.enabled = true;
+    this.clock = 0;      // horloge interne (s) pour savoir quand la vue a bougé
+    this.lastLook = -10; // dernier moment où l'utilisateur a bougé la vue
     this.attach();
   }
 
@@ -41,6 +43,7 @@ export class PlayerCamera {
   look(dx, dy) {
     this.yaw -= dx * CONFIG.playerCamera.mouseSensitivity;
     this.pitch -= dy * CONFIG.playerCamera.mouseSensitivity;
+    this.lastLook = this.clock; // la vue a bougé : priorité au manuel
     this.clampPitch();
   }
 
@@ -52,13 +55,26 @@ export class PlayerCamera {
   update(delta) {
     if (!this.enabled) return;
     const c = CONFIG.playerCamera;
+    this.clock += delta;
 
     // Rotation au clavier (flèches)
-    if (Input.isDown('ArrowLeft')) this.yaw += c.keyTurnSpeed * delta;
-    if (Input.isDown('ArrowRight')) this.yaw -= c.keyTurnSpeed * delta;
+    if (Input.isDown('ArrowLeft')) { this.yaw += c.keyTurnSpeed * delta; this.lastLook = this.clock; }
+    if (Input.isDown('ArrowRight')) { this.yaw -= c.keyTurnSpeed * delta; this.lastLook = this.clock; }
     if (Input.isDown('ArrowUp')) this.pitch += c.keyTurnSpeed * delta;
     if (Input.isDown('ArrowDown')) this.pitch -= c.keyTurnSpeed * delta;
     this.clampPitch();
+
+    // En véhicule : la caméra revient progressivement sur l'axe du véhicule,
+    // SAUF si l'utilisateur a bougé la vue récemment (souris/flèches/toucher)
+    if (this.target !== this.player.group) {
+      const vehYaw = this.target.rotation.y + Math.PI; // derrière/en ligne avec le véhicule
+      if (this.clock - this.lastLook > c.vehicleYawFollowDelay) {
+        let dy = vehYaw - this.yaw;
+        while (dy > Math.PI) dy -= 2 * Math.PI;
+        while (dy < -Math.PI) dy += 2 * Math.PI;
+        this.yaw += dy * Math.min(1, c.vehicleYawLerp * delta);
+      }
+    }
 
     if (this.target === this.player.group) {
       // --- FPS : caméra aux yeux du joueur ---
