@@ -3,6 +3,8 @@ import * as THREE from 'three';
 import { CONFIG } from '../config.js';
 import osmData from './data/embiez-osm.js';
 
+import { mulberry32 } from '../utils/random.js';
+
 // Bâtiments OSM en style Wind Waker (toon) :
 // - murs = boîtes orientées (yaw réel du polygone OSM), couleurs vives par type
 // - coquille noire derrière chaque boîte = outline (BackSide, un peu plus gros)
@@ -54,6 +56,7 @@ export class Buildings {
     const v = new THREE.Vector3();
     const s = new THREE.Vector3();
     const col = new THREE.Color();
+    const winMats = []; // matrices des fenêtres (toutes façades)
 
     list.forEach((b, i) => {
       const y = this.terrain.heightAt(b.cx, b.cz);
@@ -99,10 +102,67 @@ export class Buildings {
       roofs.setMatrixAt(i, m);
 
       this.colliders.push({ cx: b.cx, cz: b.cz, w: b.w, d: b.d, yaw: b.yaw });
+
+      // --- Fenêtres sur les 4 façades (repère local du bâtiment) ---
+      for (let f = 0; f < 4; f++) {
+        const len = f < 2 ? b.w : b.d; // façades avant/arrière = w, côtés = d
+        const cols = Math.max(0, Math.floor((len - 2) / 3.2));
+        const rows = Math.max(1, Math.floor((wallH - 3.4) / 4));
+        for (let c = 0; c < cols; c++) {
+          for (let r = 0; r < rows; r++) {
+            const along = cols > 1 ? -len / 2 + 1.6 + c * ((len - 3.2) / (cols - 1)) : 0;
+            let lx = 0, lz = 0, ry = 0;
+            if (f === 0) { lz = b.d / 2 + 0.04; lx = along; ry = 0; }
+            else if (f === 1) { lz = -b.d / 2 - 0.04; lx = -along; ry = Math.PI; }
+            else if (f === 2) { lx = b.w / 2 + 0.04; lz = along; ry = Math.PI / 2; }
+            else { lx = -b.w / 2 - 0.04; lz = -along; ry = -Math.PI / 2; }
+            const cosY = Math.cos(b.yaw);
+            const sinY = Math.sin(b.yaw);
+            const wx = b.cx + lx * cosY + lz * sinY;
+            const wz = b.cz - lx * sinY + lz * cosY;
+            // jamais trop bas : au moins 2.3 m au-dessus du sol sous la fenêtre
+            // (sinon 3.0 m au-dessus du bas du mur, qui descend jusqu'au sol en pente)
+            const wy = Math.max(baseY + 3.0, this.terrain.heightAt(wx, wz) + 2.3) + r * 4;
+            if (wy > wallTop - 0.9) continue;
+            e.set(0, b.yaw + ry, 0);
+            q.setFromEuler(e);
+            v.set(wx, wy, wz);
+            s.set(1, 1, 1);
+            m.compose(v, q, s);
+            winMats.push(m.clone());
+          }
+        }
+      }
     });
 
-    this.group.add(walls, shells, roofs);
-    console.log('[Buildings] bâtiments posés :', n, '/', osmData.buildings.length);
+    // --- Mesh des fenêtres (1 InstancedMesh) : vitres sombres, et 1 sur 5
+    // choisies au hasard seront ALLUMÉES (jaune) la nuit ---
+    const winColorOff = new THREE.Color(0x33506a); // vitre éteinte (gris/bleu)
+    const winColorOn = new THREE.Color(0xffd75a);  // fenêtre allumée
+    this.winColorOff = winColorOff;
+    this.winColorOn = winColorOn;
+    const windows = new THREE.InstancedMesh(
+      new THREE.BoxGeometry(1.5, 1.8, 0.06),
+      new THREE.MeshBasicMaterial({ color: 0xffffff }), // couleur par instance
+      Math.max(1, winMats.length)
+    );
+    winMats.forEach((mm, i) => {
+      windows.setMatrixAt(i, mm);
+      windows.setColorAt(i, winColorOff);
+    });
+    const randW = mulberry32(31);
+    this.litWindows = [];
+    for (let i = 0; i < winMats.length; i++) if (randW() < 0.2) this.litWindows.push(i); // 1 sur 5
+    this.windows = windows;
+    this.group.add(walls, shells, roofs, windows);
+    console.log('[Buildings] bâtiments posés :', n, '/', osmData.buildings.length, '| fenêtres :', winMats.length, '| allumables :', this.litWindows.length);
+  }
+
+  // La nuit : 1 fenêtre sur 5 (celles choisies au hasard) s'allume en jaune
+  setWindowsLit(night) {
+    const c = night ? this.winColorOn : this.winColorOff;
+    for (const i of this.litWindows) this.windows.setColorAt(i, c);
+    if (this.windows.instanceColor) this.windows.instanceColor.needsUpdate = true;
   }
 
   createRocks() {

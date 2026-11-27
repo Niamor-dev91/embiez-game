@@ -286,9 +286,10 @@ export class Game {
       this.sun.intensity = d.sunNightIntensity * (1 - dayF);
     }
     this.ambient.intensity = d.ambientNight + (d.ambientDay - d.ambientNight) * dayF;
-    // Phares des voitures allumés la nuit
+    // Phares des voitures allumés la nuit + 1 fenêtre sur 5 allumée dans les bâtiments
     if (this.car.setHeadlights) this.car.setHeadlights(this.isNight);
     for (const tc of this.traffic) if (tc.setHeadlights) tc.setHeadlights(this.isNight);
+    this.buildings.setWindowsLit(this.isNight);
   }
 
   // --- Mises à jour ---

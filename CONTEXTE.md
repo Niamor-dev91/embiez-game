@@ -95,7 +95,11 @@ src/world/, src/player/, src/vehicles/, src/npc/, src/utils/
 - Outline "toon" : coquille noire (MeshBasicMaterial BackSide) 6 % plus grosse
   derrière chaque boîte (props.outlineColor/outlineScale)
 - Toit = pyramide à 4 pans rouge vif (ConeGeometry 4 pans, props.roofColor)
-- Tout en InstancedMesh : 3 draw calls pour les 160 bâtiments
+- Tout en InstancedMesh : 3 draw calls pour les 160 bâtiments + 1 pour les
+  ~1 800 FENÊTRES 1,5x1,8 m sur les 4 façades (espacement 3,2 m / 4 m),
+  jamais à moins de 2,3 m du sol local (pentes), couleur par instance ;
+  la nuit, 1 fenêtre sur 5 (choix seeded) s'allume en jaune (setWindowsLit,
+  appelé depuis le cycle jour/nuit)
 - Sur les pentes, les murs descendent jusqu'au sol : base = min(heightAt des
   4 coins du bâtiment) - props.foundationMargin (0.6 m), le haut du mur et
   le toit restent à la même hauteur
