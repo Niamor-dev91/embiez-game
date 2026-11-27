@@ -59,9 +59,13 @@ src/world/, src/player/, src/vehicles/, src/npc/, src/utils/
 ### Rendu (style rétro GTA III)
 - Pas d'antialiasing, pixel ratio max = 1
 - Ciel = couleur unie, pas de skybox — avec CYCLE JOUR/NUIT (Game.updateDayNight,
-  config dayNight : 12 min de soleil + 12 min de lune = 24 min) : ciel/brouillard/
-  mer lerp jour<->nuit, soleil tourne (midi au zénith) puis lune la nuit,
-  ambient varie ; HUD affiche ☀/☾ + heure
+  config dayNight : 12 min de soleil (8h-20h, dayStartHour=8) + 12 min de lune
+  = 24 min) : transition PROGRESSIVE (smoothstep au lever/coucher),
+  ciel/brouillard/mer en lerp, SOLEIL et LUNE visibles (maillages sphères)
+  faisant un parcours Est (+X) -> Ouest (-X) via le sud (+Z) : 8h horizon
+  Est, 12h zénith (arc sunArcPower), 20h horizon Ouest ; la lumière
+  directionnelle les suit, 400 ÉTOILES (Points) visibles la nuit ;
+  HUD affiche ☀/☾ + heure
 - Phares de la voiturette ET des voitures de trafic : 2 SpotLight à l'avant,
   allumés automatiquement la nuit (setHeadlights, headlightIntensity)
 - Brouillard linéaire (THREE.Fog) de même couleur que le ciel,

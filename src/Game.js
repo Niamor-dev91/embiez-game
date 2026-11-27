@@ -19,6 +19,7 @@ import { Input } from './utils/Input.js';
 import { resolveCircleVsCircle } from './utils/Collisions.js';
 import { Pickups } from './world/Pickups.js';
 import { TouchControls } from './utils/TouchControls.js';
+import { mulberry32 } from './utils/random.js';
 
 // Classe principale : renderer, scène, caméra, boucle d'animation.
 
@@ -91,6 +92,39 @@ export class Game {
     this.sun = new THREE.DirectionalLight(0xffffff, 1.0);
     this.sun.position.set(50, 100, 30);
     this.scene.add(this.ambient, this.sun);
+
+    // Corps célestes visibles : soleil (jour) et lune (nuit) font un parcours
+    // Est -> Ouest dans le ciel (x = est, le sud est +Z) ; étoiles la nuit.
+    const R = 800;
+    this.sunMesh = new THREE.Mesh(
+      new THREE.SphereGeometry(40, 16, 16),
+      new THREE.MeshBasicMaterial({ color: 0xffdd44, fog: false })
+    );
+    this.moonMesh = new THREE.Mesh(
+      new THREE.SphereGeometry(26, 16, 16),
+      new THREE.MeshBasicMaterial({ color: 0xd8e4ff, fog: false })
+    );
+    this.sunMesh.position.set(R, 0, 0.35 * R);
+    this.moonMesh.position.set(-R, 0, 0.35 * R);
+    this.scene.add(this.sunMesh, this.moonMesh);
+
+    // Étoiles : points aléatoires sur la voûte céleste, visibles la nuit
+    const rand = mulberry32(99);
+    const starPos = [];
+    for (let i = 0; i < 400; i++) {
+      // direction aléatoire sur l'hémisphère supérieur
+      const u = rand() * 2 - 1;
+      const ph = rand() * Math.PI * 2;
+      const r = Math.sqrt(1 - u * u);
+      starPos.push(Math.cos(ph) * r * 900, Math.abs(u) * 900, Math.sin(ph) * r * 900);
+    }
+    const starGeo = new THREE.BufferGeometry();
+    starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starPos, 3));
+    this.stars = new THREE.Points(starGeo, new THREE.PointsMaterial({
+      color: 0xffffff, size: 2.2, sizeAttenuation: false,
+      transparent: true, opacity: 0, fog: false, depthWrite: false,
+    }));
+    this.scene.add(this.stars);
   }
 
   initCamera() {
@@ -208,10 +242,13 @@ export class Game {
     const d = CONFIG.dayNight;
     const cycle = (d.dayMinutes + d.nightMinutes) * 60; // 24 min
     this.timeOfDay = (this.timeOfDay + delta / cycle) % 1;
-    const a = this.timeOfDay * Math.PI * 2;
-    const sunH = Math.sin(a); // > 0 le jour, < 0 la nuit
-    // facteur jour 0..1 (lisse au lever/coucher)
-    const dayF = Math.max(0, Math.min(1, sunH / 0.25));
+    // Le jour va de dayStartHour (8h, lever à l'Est) à +12h (20h, coucher à l'Ouest)
+    const dayStart = CONFIG.dayNight.dayStartHour / 24;
+    const a = ((((this.timeOfDay - dayStart) % 1) + 1) % 1) * Math.PI * 2; // 0 au lever, π au coucher
+    const sunH = Math.sin(a); // > 0 le jour (8h..20h), < 0 la nuit
+    // facteur jour 0..1, PROGRESSIF au lever/coucher (smoothstep)
+    const tf = Math.max(0, Math.min(1, (sunH + 0.2) / 0.5));
+    const dayF = tf * tf * (3 - 2 * tf);
     this.isNight = sunH < 0;
 
     // Ciel + brouillard
@@ -220,16 +257,33 @@ export class Game {
     this.scene.fog.color.copy(sky);
     // Mer
     this.sea.mesh.material.color.set(d.seaNight).lerp(new THREE.Color(CONFIG.sea.color), dayF);
-    // Soleil le jour, lune la nuit
+    // Soleil VISIBLE le jour : parcours Est (+X) -> Ouest (-X) via le sud (+Z).
+    // Arc tel que : 8h = horizon Est, 12h = zénith, 20h = horizon Ouest.
+    const R = 800;
+    const p = CONFIG.dayNight.sunArcPower;
+    const u = Math.max(0, Math.min(1, a / Math.PI)); // 0 au lever, 1 au coucher
+    const thDay = Math.PI * Math.pow(u, p);
+    this.sunMesh.position.set(Math.cos(thDay) * R, Math.sin(thDay) * R, 0.35 * R);
+    this.sunMesh.visible = sunH > -0.05;
+    // Lune VISIBLE la nuit : même parcours Est -> Ouest (nuit de 20h à 8h)
+    const v = Math.max(0, Math.min(1, (a - Math.PI) / Math.PI));
+    const thNight = Math.PI * Math.pow(v, p);
+    this.moonMesh.position.set(Math.cos(thNight) * R, Math.sin(thNight) * R, 0.35 * R);
+    this.moonMesh.visible = sunH < 0.05;
+    // Étoiles la nuit (opacité progressive)
+    const starO = Math.max(0, Math.min(1, -sunH / 0.25));
+    this.stars.material.opacity = starO;
+    this.stars.visible = starO > 0.02;
+
+    // Lumière directionnelle : suit le soleil le jour, la lune la nuit (progressif)
     if (sunH >= 0) {
-      this.sun.position.set(Math.cos(a) * 100, sunH * 100, 40);
+      this.sun.position.copy(this.sunMesh.position).multiplyScalar(0.2);
       this.sun.color.set(d.sunDay);
-      this.sun.intensity = d.sunDayIntensity * (0.3 + 0.7 * dayF);
+      this.sun.intensity = d.sunDayIntensity * (0.15 + 0.85 * dayF);
     } else {
-      const m = -sunH;
-      this.sun.position.set(-Math.cos(a) * 100, m * 80, 40);
+      this.sun.position.copy(this.moonMesh.position).multiplyScalar(0.2);
       this.sun.color.set(d.sunNight);
-      this.sun.intensity = d.sunNightIntensity;
+      this.sun.intensity = d.sunNightIntensity * (1 - dayF);
     }
     this.ambient.intensity = d.ambientNight + (d.ambientDay - d.ambientNight) * dayF;
     // Phares des voitures allumés la nuit

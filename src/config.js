@@ -178,6 +178,8 @@ export const CONFIG = {
   dayNight: {
     dayMinutes: 12,
     nightMinutes: 12,
+    dayStartHour: 8,         // le soleil se lève à 8h (horizon Est)
+    sunArcPower: 0.63,       // arc Est->Ouest tel qu'à 12h le soleil est au zénith, à 20h à l'Ouest
     skyDay: 0x55b8ff,        // ciel jour (bleu vif, actuel)
     skyNight: 0x0a1230,      // ciel nuit
     seaNight: 0x0a2a4a,      // mer la nuit
