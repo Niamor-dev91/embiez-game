@@ -353,6 +353,7 @@ export class Game {
     this.playerCamera.target = this.player.group; // retour en FPS
     this.playerCamera.driverView = false;
     if (v.setCabinVisible) v.setCabinVisible(true);
+    if (v === this.heliVehicle && v.startFall) v.startFall(); // lâché en l'air : chute libre
     this.playerCamera.distance = CONFIG.playerCamera.distance;
     // Le joueur réapparaît à côté du véhicule, sur le sol
     const p = v.pos;
@@ -784,6 +785,8 @@ export class Game {
           );
         }
       }
+      // Hélicoptère lâché en l'air : il tombe au sol tout seul
+      if (!this.vehicle && this.heliVehicle.falling) this.heliVehicle.updateFall(delta);
       // Voitures en circulation : le joueur, les PNJ et la voiturette garée
       // les font dévier (elles cèdent) ; bloquées par bâtiments/arbres
       for (const tc of this.traffic) {

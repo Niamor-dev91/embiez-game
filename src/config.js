@@ -151,6 +151,7 @@ export const CONFIG = {
     climbAccel: 14,
     climbFriction: 6,      // retour au vol stationnaire sans input
     maxAltitude: 150,      // plafond de vol (m)
+    fallGravity: 12,       // gravité de la chute quand on sort de l'hélico en l'air (m/s²)
     radius: 3,             // rayon de collision
     cameraDistance: 12,    // caméra 3e personne
     interactDistance: 4,   // E pour monter à bord

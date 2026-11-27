@@ -69,6 +69,7 @@ export class Helicopter {
   // Remis sur sa colline (démarrage + restart)
   reset() {
     this.speed = 0;
+    this.falling = false; // chute en cours si on quitte l'hélico en l'air
     this.vy = 0;
     this.group.position.set(
       this.spot.x,
@@ -127,5 +128,30 @@ export class Helicopter {
     this.group.rotation.x = THREE.MathUtils.clamp(-this.speed * 0.008, -0.22, 0.22);
     // Rotor principal
     this.rotor.rotation.y += delta * 28;
+  }
+
+  // Quitté en l'air : l'hélico part en chute libre jusqu'au sol
+  startFall() {
+    const minY = Math.max(this.ground.heightAt(this.pos.x, this.pos.z), 0) + 1.2;
+    if (this.pos.y > minY + 0.5) {
+      this.falling = true;
+      this.speed = 0;
+      this.vy = Math.min(this.vy, 0);
+    }
+  }
+
+  updateFall(delta) {
+    const h = CONFIG.heli;
+    this.vy -= h.fallGravity * delta;
+    this.pos.y += this.vy * delta;
+    const minY = Math.max(this.ground.heightAt(this.pos.x, this.pos.z), 0) + 1.2;
+    if (this.pos.y <= minY) {
+      this.pos.y = minY;
+      this.vy = 0;
+      this.falling = false;
+      this.group.rotation.x = 0.08; // posé, un peu penché
+    }
+    this.group.position.set(this.pos.x, this.pos.y, this.pos.z);
+    this.rotor.rotation.y += delta * Math.max(2, 28 + this.vy); // rotor qui ralentit
   }
 }
