@@ -70,6 +70,7 @@ export const CONFIG = {
     lerpSpeed: 10,           // vitesse du suivi adouci (véhicule)
     mouseSensitivity: 0.0025, // radians par pixel
     keyTurnSpeed: 2.5,       // radians par seconde (flèches)
+    padSensitivity: 500,     // manette : "px/s" à fond de stick droit (caméra, pour tourner vite)
     minPitch: -1.45,         // FPS : on peut regarder en haut/bas
     maxPitch: 1.45,
     vehicleYawFollowDelay: 1.5, // en véhicule : s après le dernier mouvement de vue avant de re-suivre l'axe du véhicule

@@ -49,6 +49,11 @@ src/world/, src/player/, src/vehicles/, src/npc/, src/utils/
 - Niveau de la mer : y = 0
 - Clavier : toujours `event.code` (KeyW/KeyA/KeyS/KeyD = ZQSD en AZERTY),
   jamais `event.key`, pour que ça marche quel que soit le layout
+- Manette (Gamepad API, ex. Xbox — aucune dépendance) : Input.pollGamepad()
+  appelé chaque frame dans Game.loop ; mapping standard W3C fusionné dans
+  Input.isDown/mouseDown : stick gauche = ZQSD (déplacement/conduite),
+  stick droit = caméra (Input.lookX/lookY -> PlayerCamera, padSensitivity),
+  A(0)=saut, B(1)=courir, X(2)=E, View(8)=R, RT(7)/RB(5)=tir ; zone morte 0.18
 - Tactile (smartphone) : src/utils/TouchControls.js, activé si 'ontouchstart' /
   maxTouchPoints > 0. Joystick virtuel à gauche -> faux keydown/keyup ZQSD dans
   Input ; boutons à droite : TIR (mousedown), SAUT (Space), COURIR (Shift), E ;

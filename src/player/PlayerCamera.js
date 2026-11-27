@@ -62,6 +62,10 @@ export class PlayerCamera {
     if (Input.isDown('ArrowRight')) { this.yaw -= c.keyTurnSpeed * delta; this.lastLook = this.clock; }
     if (Input.isDown('ArrowUp')) this.pitch += c.keyTurnSpeed * delta;
     if (Input.isDown('ArrowDown')) this.pitch -= c.keyTurnSpeed * delta;
+    // Stick droit de la manette = regarder autour
+    if (Input.lookX !== 0 || Input.lookY !== 0) {
+      this.look(Input.lookX * c.padSensitivity * delta, Input.lookY * c.padSensitivity * delta);
+    }
     this.clampPitch();
 
     // En véhicule : la caméra revient progressivement sur l'axe du véhicule,

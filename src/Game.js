@@ -17,7 +17,7 @@ import { Boat, dockSpots } from './vehicles/Boat.js';
 
 import { PoliceHelicopter } from './vehicles/PoliceHelicopter.js';
 import { DebugCamera } from './utils/DebugCamera.js';
-import { Input } from './utils/Input.js';
+import { Input, pollGamepad } from './utils/Input.js';
 import { resolveCircleVsCircle } from './utils/Collisions.js';
 
 import { addOutline } from './utils/Outline.js';
@@ -740,6 +740,7 @@ export class Game {
 
   loop() {
     requestAnimationFrame(() => this.loop());
+    pollGamepad(); // manette (ex. Xbox) relue à chaque frame
     // On plafonne le delta pour éviter les gros sauts (onglet en arrière-plan)
     const delta = Math.min(this.clock.getDelta(), 0.1);
     this.update(delta);
