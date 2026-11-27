@@ -186,6 +186,7 @@ export const CONFIG = {
   // --- Mission "Livraison de pastis" (déclenchée en prenant la voiturette) ---
   mission: {
     duration: 90,          // temps pour livrer le pastis (secondes) : 1 min 30
+    reward: 100,           // euros gagnés si la mission est réussie (player.money)
     deliverDistance: 10,   // la voiture doit être à moins de ça du client (m)
     markerColor: 0xffc040, // cylindre lumineux translucide autour du client
     markerRadius: 10,      // rayon du cylindre (= deliverDistance, visible de loin)

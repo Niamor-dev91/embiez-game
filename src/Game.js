@@ -333,7 +333,8 @@ export class Game {
     if (d < CONFIG.mission.deliverDistance) {
       this.mission.active = false;
       this.clientMarker.visible = false;
-      this.notice = 'Livraison réussie ! 🍾';
+      this.player.money += CONFIG.mission.reward; // la mission rapporte 100 €
+      this.notice = 'Livraison réussie ! 🍾 +' + CONFIG.mission.reward + ' €';
       this.noticeTimer = 6;
     } else if (this.mission.timeLeft <= 0) {
       this.mission.active = false;
@@ -534,7 +535,7 @@ export class Game {
         : 'Revolver : ' + this.revolver.ammo + '/' + this.revolver.maxAmmo
           + ' | stock ' + this.revolver.reserve + '/' + this.revolver.maxReserve
           + (this.revolver.ammo === 0 && this.revolver.reserve === 0 ? ' VIDE !' : '');
-      txt = 'PV : ' + this.player.hp + '/' + CONFIG.combat.playerHp + '   |   ' + ammoTxt + '   |   clic ou F = tirer';
+      txt = 'PV : ' + this.player.hp + '/' + CONFIG.combat.playerHp + '   |   💰 ' + this.player.money + ' €   |   ' + ammoTxt + '   |   clic ou F = tirer';
       if (this.wanted) txt += '   |   ⚠ RECHERCHÉ';
       if (this.heli.state === 'active') txt += '   |   hélico ' + this.heli.hp + '/' + this.heli.maxHp + ' PV';
       if (this.mission.active) txt += '   |   🍾 MISSION pastis : ' + Math.ceil(this.mission.timeLeft) + ' s';

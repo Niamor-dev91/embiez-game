@@ -20,6 +20,7 @@ export class Player {
     this.onGround = true;
     this.walkPhase = 0;
     this.hp = CONFIG.combat.playerHp;
+    this.money = 0; // bourse en euros (gagnée via les missions, ex. livraison de pastis)
     this.alive = true;
     this.createMesh();
 
@@ -73,6 +74,7 @@ export class Player {
   respawn() {
     const s = CONFIG.player.spawn;
     this.hp = CONFIG.combat.playerHp;
+    this.money = 0; // restart complet : la bourse repart à zéro
     this.alive = true;
     this.vy = 0;
     this.group.rotation.set(0, 0, 0);

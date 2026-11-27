@@ -316,7 +316,9 @@ src/world/, src/player/, src/vehicles/, src/npc/, src/utils/
   la voiture à moins de deliverDistance (10 m) du client, voiture à 20 m/s max.
   Cylindre lumineux translucide (clientMarker, fog:false = visible de loin)
   autour du client pendant la mission. Succès/échec -> notice HUD ; HUD
-  '🍾 MISSION pastis : X s'. Une seule fois par PNJ client (mission.done) ;
+  '🍾 MISSION pastis : X s'. Succès = +mission.reward € sur player.money (bourse
+  affichée dans le HUD '💰 X €', remise à 0 au restart). Une seule fois par PNJ
+  client (mission.done) ;
   spawnClient() (nouveau PNJ) remet done=false -> la mission se relance en
   re-entrant dans la voiture ; reset au restart
 - Pickups (src/world/Pickups.js) : pickups.ammoCount = 10 boîtes de munitions
