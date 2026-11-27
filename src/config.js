@@ -247,7 +247,8 @@ export const CONFIG = {
 
   // --- PNJ (touristes qui marchent sur les routes OSM) ---
   npc: {
-    count: 40,               // nombre de PNJ (chacun sur un chemin différent)
+    count: 200,              // nombre de PNJ (chacun sur un chemin OSM ; ~20 meshes/PNJ, max raisonnable avant instancing)
+    roadMinSpacing: 30,      // espacement min entre les chemins des PNJ (m) : plus petit = plus de trajets différents, moins de croisements
     walkSpeed: 2,            // mètres par seconde
     radius: 0.35,            // rayon de collision
     // 3 variations de civils (style XIII : couleurs vives + outline noir),

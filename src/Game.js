@@ -180,7 +180,7 @@ export class Game {
     // PNJ : répartis sur des chemins différents de l'île, départ aléatoire
     // + policiers (pistolet, look bleu) placés sur les chemins les plus
     // proches du centre de l'île (le village)
-    const roads = pickRoads(CONFIG.npc.count);
+    const roads = pickRoads(CONFIG.npc.count, CONFIG.npc.roadMinSpacing);
     const policeRoads = pickPoliceRoads(CONFIG.combat.policeCount, roads);
     this.npcs = [];
     for (let i = 0; i < CONFIG.npc.count; i++) {
@@ -307,7 +307,7 @@ export class Game {
     this.heli.despawn();
     // PNJ recréés aux positions initiales (mêmes seeds -> mêmes chemins)
     for (const n of this.npcs) this.scene.remove(n.group);
-    const roads = pickRoads(CONFIG.npc.count);
+    const roads = pickRoads(CONFIG.npc.count, CONFIG.npc.roadMinSpacing);
     const policeRoads = pickPoliceRoads(CONFIG.combat.policeCount, roads);
     this.npcs = [];
     for (let i = 0; i < CONFIG.npc.count; i++) {
@@ -696,7 +696,18 @@ export class Game {
           resolveCircleVsCircle(tc.pos, tc.radius, this.player.group.position, CONFIG.player.radius);
         }
         for (const npc of this.npcs) {
-          if (npc.hp > 0) resolveCircleVsCircle(tc.pos, tc.radius, npc.group.position, CONFIG.npc.radius);
+          if (npc.hp <= 0) continue;
+          const d = Math.hypot(npc.group.position.x - tc.pos.x, npc.group.position.z - tc.pos.z);
+          if (d < tc.radius + CONFIG.npc.radius) {
+            // Collision voiture de trafic <-> PNJ : le PNJ perd 1 PV (cooldown)
+            if (npc.carHitCooldown <= 0) {
+              npc.takeDamage(CONFIG.combat.damagePerShot, tc.pos);
+              npc.carHitCooldown = CONFIG.vehicle.npcHitCooldown;
+            }
+            // les deux se repoussent (la voiture cède, le PNJ aussi)
+            resolveCircleVsCircle(tc.pos, tc.radius, npc.group.position, CONFIG.npc.radius);
+            resolveCircleVsCircle(npc.group.position, CONFIG.npc.radius, tc.pos, tc.radius);
+          }
         }
         if (!this.vehicle) resolveCircleVsCircle(tc.pos, tc.radius, this.car.pos, CONFIG.vehicle.radius);
       }

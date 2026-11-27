@@ -230,10 +230,15 @@ src/world/, src/player/, src/vehicles/, src/npc/, src/utils/
 
 ### PNJ
 - src/npc/Npc.js : PNJ qui marche le long d'un chemin OSM (routes + sentiers :
-  pickRoads(count) choisit `count` chemins répartis sur l'île (longueur min
-  50 m, espacés d'au moins 100 m), départ à une position aléatoire du chemin
+  pickRoads(count, npc.roadMinSpacing=30 m) choisit `count` chemins répartis sur
+  l'île (longueur min 50 m) ; si count > nb de chemins, le surplus est réparti
+  EN CYCLE sur les existants (1-2 PNJ/route) -> 111/115 routes utilisées pour
+  200 civils. pickPoliceRoads complète aussi si plus assez de routes libres.
+  départ à une position aléatoire du chemin
   (seeded), demi-tour
-  aux extrémités, posé sur le terrain (heightAt), bloqué par les bâtiments
+  aux extrémités, posé sur le terrain (heightAt), bloqué par les bâtiments.
+  Collision voiture de TRAFIC <-> PNJ (Game.update) : -1 PV au PNJ (cooldown
+  npcHitCooldown) + les deux se repoussent (elles ne se traversent plus)
 - src/utils/random.js : PRNG seeded (mulberry32), partagé végétation/PNJ
 - Mesh humanoïde partagé avec le joueur : src/utils/Humanoid.js
   (createHumanoid + setWalkAnimation), style XIII comic toon : outline noir,

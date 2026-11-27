@@ -36,7 +36,7 @@ function centroidOf(pts) {
 
 // Sélectionne `count` chemins répartis sur l'île (longueur min 50 m, espacés
 // d'au moins minSpacing mètres entre leurs centres), les plus longs d'abord.
-export function pickRoads(count, minSpacing = 100, minLength = 50) {
+export function pickRoads(count, minSpacing = 30, minLength = 50) {
   const eligible = osmData.roads
     .filter((r) => PATH_KINDS.includes(r.kind) && roadLength(r) >= minLength)
     .sort((a, b) => roadLength(b) - roadLength(a));
@@ -50,10 +50,10 @@ export function pickRoads(count, minSpacing = 100, minLength = 50) {
       centers.push([cx, cz]);
     }
   }
-  // Si pas assez de chemins espacés, compléter avec les suivants
-  for (const r of eligible) {
-    if (chosen.length >= count) break;
-    if (!chosen.includes(r)) chosen.push(r);
+  // Si pas assez de chemins espacés : répartir le surplus EN CYCLE sur les
+  // chemins existants (plusieurs PNJ par chemin, positions de départ aléatoires)
+  for (let i = 0; chosen.length < count && eligible.length > 0; i++) {
+    chosen.push(eligible[i % eligible.length]);
   }
   return chosen;
 }
@@ -91,12 +91,22 @@ export function nearestRoadPoint(x, z) {
 // pour placer les policiers là où il y a du monde.
 export function pickPoliceRoads(count, taken) {
   const takenSet = new Set(taken);
-  return osmData.roads
-    .filter((r) => PATH_KINDS.includes(r.kind) && roadLength(r) >= 50 && !takenSet.has(r))
+  const eligible = osmData.roads
+    .filter((r) => PATH_KINDS.includes(r.kind) && roadLength(r) >= 50)
     .map((r) => ({ r, d: Math.hypot(...centroidOf(r.points)) }))
-    .sort((a, b) => a.d - b.d)
-    .slice(0, count)
-    .map((o) => o.r);
+    .sort((a, b) => a.d - b.d);
+  // D'abord les routes NON prises par les civils, puis on complète avec les
+  // plus proches du centre même si déjà prises (les policiers croisent les civils)
+  const chosen = [];
+  for (const o of eligible) {
+    if (chosen.length >= count) break;
+    if (!takenSet.has(o.r)) chosen.push(o.r);
+  }
+  for (const o of eligible) {
+    if (chosen.length >= count) break;
+    if (!chosen.includes(o.r)) chosen.push(o.r);
+  }
+  return chosen;
 }
 
 // Route pour le PNJ client de la mission "Livraison de pastis" : assez loin du
