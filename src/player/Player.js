@@ -21,6 +21,7 @@ export class Player {
     this.walkPhase = 0;
     this.hp = CONFIG.combat.playerHp;
     this.money = 0; // bourse en euros (gagnée via les missions, ex. livraison de pastis)
+    this.armor = 0; // points de bouclier (gilet pare-balles boutique), prioritaires sur les PV
     this.alive = true;
     this.createMesh();
 
@@ -67,7 +68,10 @@ export class Player {
 
   takeDamage(dmg) {
     if (!this.alive) return;
-    this.hp = Math.max(0, this.hp - dmg);
+    // Le bouclier (gilet pare-balles) absorbe d'abord, en priorité sur les PV
+    const absorbed = Math.min(this.armor, dmg);
+    this.armor -= absorbed;
+    this.hp = Math.max(0, this.hp - (dmg - absorbed));
     if (this.hp === 0) this.alive = false;
   }
 
@@ -75,6 +79,7 @@ export class Player {
     const s = CONFIG.player.spawn;
     this.hp = CONFIG.combat.playerHp;
     this.money = 0; // restart complet : la bourse repart à zéro
+    this.armor = 0; // idem pour le bouclier
     this.alive = true;
     this.vy = 0;
     this.group.rotation.set(0, 0, 0);

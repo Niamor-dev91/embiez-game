@@ -196,6 +196,20 @@ export const CONFIG = {
     clientMaxDistance: 500, // ...sur la même masse terrestre (pas d'eau entre les deux)
   },
 
+  // --- Boutique du port (grande maison avec porte + PNJ vendeur) ---
+  shop: {
+    houseMaxDistance: 150, // la boutique = la plus grande maison à moins de ça du spawn (m)
+    doorWidth: 1.2,        // largeur de l'ouverture (m) — la voiture (rayon 1.3 m) ne passe pas
+    doorHeight: 2.2,
+    wallThickness: 0.35,   // épaisseur des murs de la boutique (collision)
+    doorColor: 0x6a4a2a,   // porte en bois marron, entrouverte
+    roofColor: 0xffd23a,   // toit JAUNE PASTIS de la boutique (repérable de loin)
+    price: 100,            // prix du gilet pare-balles (€)
+    armor: 10,             // points de bouclier donnés par le gilet (prioritaires sur les PV)
+    interactDistance: 2.5, // distance max au vendeur pour acheter avec E (m)
+    keeperColors: { body: 0x2a8a5a, head: 0xd8a880, legs: 0x2a2a2a, arms: 0x2a8a5a }, // look vendeur (vert)
+  },
+
   // --- PNJ (touristes qui marchent sur les routes OSM) ---
   npc: {
     count: 40,               // nombre de PNJ (chacun sur un chemin différent)

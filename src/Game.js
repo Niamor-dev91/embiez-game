@@ -19,6 +19,8 @@ import { PoliceHelicopter } from './vehicles/PoliceHelicopter.js';
 import { DebugCamera } from './utils/DebugCamera.js';
 import { Input } from './utils/Input.js';
 import { resolveCircleVsCircle } from './utils/Collisions.js';
+
+import { addOutline } from './utils/Outline.js';
 import { Pickups } from './world/Pickups.js';
 import { TouchControls } from './utils/TouchControls.js';
 import { mulberry32 } from './utils/random.js';
@@ -161,6 +163,9 @@ export class Game {
     // Colliders solides : bâtiments + troncs des pins
     const colliders = [...this.buildings.colliders, ...this.vegetation.colliders];
     this.colliders = colliders; // réutilisé au restart (recréation des PNJ)
+
+    // Boutique du port : grande maison avec une porte + PNJ vendeur
+    this.setupShop();
     this.player = new Player(this.scene, this.ground, colliders);
     this.player.group.visible = false; // FPS : le perso est caché, l'arme = view model revolver
     this.playerCamera = new PlayerCamera(this.canvas, this.camera, this.player, this.ground);
@@ -306,6 +311,106 @@ export class Game {
     this.noticeTimer = 0;
   }
 
+  // --- Boutique du port : la plus grande maison près du spawn reçoit une
+  // porte (trou dans le mur : 4 colliders de murs au lieu de la boîte pleine)
+  // et un PNJ vendeur à l'intérieur ---
+  setupShop() {
+    const s = CONFIG.shop;
+    const sp = CONFIG.player.spawn;
+    const idx = this.buildings.biggestNear(sp.x, sp.z, s.houseMaxDistance);
+    if (idx < 0) { this.shop = null; return; }
+    const house = this.buildings.colliders[idx];
+    this.buildings.paintRoof(idx, s.roofColor); // toit jaune pastis : repérable de loin
+    const colliders = this.colliders;
+    colliders.splice(colliders.indexOf(house), 1); // la boîte pleine part
+    const cosY = Math.cos(house.yaw);
+    const sinY = Math.sin(house.yaw);
+    const toWorld = (lx, lz) => ({
+      x: house.cx + lx * cosY + lz * sinY,
+      z: house.cz - lx * sinY + lz * cosY,
+    });
+    const w = house.w, d = house.d, t = s.wallThickness, dw = s.doorWidth;
+    // Façades locales : normale locale, longueur, axe le long du mur
+    const facades = [
+      { n: [0, 1], len: w, axis: 'x' },
+      { n: [0, -1], len: w, axis: 'x' },
+      { n: [1, 0], len: d, axis: 'z' },
+      { n: [-1, 0], len: d, axis: 'z' },
+    ];
+    // La porte va sur la façade la plus proche du spawn
+    let doorFace = facades[0];
+    let bd = Infinity;
+    for (const f of facades) {
+      const mid = f.axis === 'x' ? toWorld(0, f.n[1] * d / 2) : toWorld(f.n[0] * w / 2, 0);
+      const dist = Math.hypot(mid.x - sp.x, mid.z - sp.z);
+      if (dist < bd) { bd = dist; doorFace = f; }
+    }
+    // 4 murs ; la façade de la porte est coupée en deux autour du trou central
+    const walls = [];
+    for (const f of facades) {
+      const push = (lx, lz, alongLen) => {
+        const p = toWorld(lx, lz);
+        walls.push(f.axis === 'x'
+          ? { cx: p.x, cz: p.z, w: alongLen, d: t, yaw: house.yaw }
+          : { cx: p.x, cz: p.z, w: t, d: alongLen, yaw: house.yaw });
+      };
+      if (f === doorFace) {
+        const segLen = f.len / 2 - dw / 2;
+        if (segLen > 0.01) {
+          for (const side of [-1, 1]) {
+            const along = side * (dw / 2 + segLen / 2);
+            if (f.axis === 'x') push(along, f.n[1] * d / 2, segLen);
+            else push(f.n[0] * w / 2, along, segLen);
+          }
+        }
+      } else if (f.axis === 'x') push(0, f.n[1] * d / 2, f.len);
+      else push(f.n[0] * w / 2, 0, f.len);
+    }
+    colliders.push(...walls);
+
+    // Porte visuelle en bois, entrouverte, dans le trou de la façade
+    const dl = doorFace.axis === 'x'
+      ? [0, doorFace.n[1] * (d / 2 + 0.08)]
+      : [doorFace.n[0] * (w / 2 + 0.08), 0];
+    const dp = toWorld(dl[0], dl[1]);
+    const door = new THREE.Mesh(
+      new THREE.BoxGeometry(s.doorWidth, s.doorHeight, 0.12),
+      new THREE.MeshLambertMaterial({ color: s.doorColor })
+    );
+    door.position.set(dp.x, this.ground.heightAt(dp.x, dp.z) + s.doorHeight / 2, dp.z);
+    door.rotation.y = house.yaw + (doorFace.axis === 'z' ? Math.PI / 2 : 0) + 0.55; // entrouverte
+    addOutline(door, 1.06, CONFIG.props.outlineColor);
+    this.scene.add(door);
+
+    // PNJ vendeur à l'intérieur (immobile, look vert)
+    const keeper = new Npc(this.scene, this.ground, colliders, null, 555, false, s.keeperColors);
+    keeper.group.position.set(house.cx, this.ground.heightAt(house.cx, house.cz), house.cz);
+    keeper.state = 'wait';
+    this.shop = { house, door, keeper };
+    console.log('[Shop] boutique : maison ' + w.toFixed(1) + 'x' + d.toFixed(1) + ' m à '
+      + Math.hypot(house.cx - sp.x, house.cz - sp.z).toFixed(0) + ' m du spawn, '
+      + walls.length + ' murs + porte, vendeur posé');
+  }
+
+  // Achat au vendeur (E à moins de shop.interactDistance) : gilet pare-balles
+  buyArmor() {
+    const s = CONFIG.shop;
+    if (this.player.armor >= s.armor) {
+      this.notice = 'Gilet pare-balles déjà au max (🛡 ' + s.armor + ')';
+      this.noticeTimer = 3;
+      return;
+    }
+    if (this.player.money < s.price) {
+      this.notice = 'Pas assez d\'€ ! Gilet : ' + s.price + ' € (tu as ' + this.player.money + ' €)';
+      this.noticeTimer = 3.5;
+      return;
+    }
+    this.player.money -= s.price;
+    this.player.armor = s.armor;
+    this.notice = 'Gilet pare-balles acheté ! 🛡 ' + s.armor + ' (' + this.player.money + ' € restants)';
+    this.noticeTimer = 4;
+  }
+
   // --- Mission "Livraison de pastis" ---
   // Déclenchée en prenant la voiturette : amener la voiture à moins de
   // mission.deliverDistance du PNJ client (de l'autre côté de l'île) en
@@ -412,6 +517,7 @@ export class Game {
     }
     for (const npc of this.npcs) npc.update(delta, this.player);
     this.client.update(delta, this.player);
+    if (this.shop) this.shop.keeper.update(delta, this.player);
     this.heli.update(delta, this.player, this.wanted);
     if (this.mode === 'debug') {
       this.debugCamera.update(delta);
@@ -448,16 +554,26 @@ export class Game {
       const eDown = Input.isDown('KeyE');
       if (eDown && !this.eHeld) {
         if (!this.vehicle) {
-          let best = null;
-          let bd = Infinity;
-          for (const v of this.vehicles) {
-            const d = Math.hypot(
-              this.player.group.position.x - v.pos.x,
-              this.player.group.position.z - v.pos.z
-            );
-            if (d < bd) { bd = d; best = v; }
+          // Priorité à la boutique : E près du vendeur = acheter le gilet
+          const kp = this.shop ? this.shop.keeper.group.position : null;
+          const pd = kp ? Math.hypot(
+            this.player.group.position.x - kp.x,
+            this.player.group.position.z - kp.z
+          ) : Infinity;
+          if (pd < CONFIG.shop.interactDistance) {
+            this.buyArmor();
+          } else {
+            let best = null;
+            let bd = Infinity;
+            for (const v of this.vehicles) {
+              const d = Math.hypot(
+                this.player.group.position.x - v.pos.x,
+                this.player.group.position.z - v.pos.z
+              );
+              if (d < bd) { bd = d; best = v; }
+            }
+            if (best && bd < this.vehicleInteractDistance(best)) this.enterVehicle(best);
           }
-          if (best && bd < this.vehicleInteractDistance(best)) this.enterVehicle(best);
         } else {
           this.exitVehicle();
         }
@@ -490,6 +606,15 @@ export class Game {
         }
       } else if (this.player.alive) {
         this.player.update(delta, this.playerCamera.yaw);
+        // Le joueur pousse le vendeur de la boutique (et inversement)
+        if (this.shop) {
+          resolveCircleVsCircle(
+            this.player.group.position,
+            CONFIG.player.radius,
+            this.shop.keeper.group.position,
+            CONFIG.npc.radius
+          );
+        }
         // Le joueur ne traverse aucun véhicule
         for (const v of this.vehicles) {
           resolveCircleVsCircle(
@@ -535,7 +660,9 @@ export class Game {
         : 'Revolver : ' + this.revolver.ammo + '/' + this.revolver.maxAmmo
           + ' | stock ' + this.revolver.reserve + '/' + this.revolver.maxReserve
           + (this.revolver.ammo === 0 && this.revolver.reserve === 0 ? ' VIDE !' : '');
-      txt = 'PV : ' + this.player.hp + '/' + CONFIG.combat.playerHp + '   |   💰 ' + this.player.money + ' €   |   ' + ammoTxt + '   |   clic ou F = tirer';
+      txt = 'PV : ' + this.player.hp + '/' + CONFIG.combat.playerHp
+        + (this.player.armor > 0 ? ' 🛡' + this.player.armor : '')
+        + '   |   💰 ' + this.player.money + ' €   |   ' + ammoTxt + '   |   clic ou F = tirer';
       if (this.wanted) txt += '   |   ⚠ RECHERCHÉ';
       if (this.heli.state === 'active') txt += '   |   hélico ' + this.heli.hp + '/' + this.heli.maxHp + ' PV';
       if (this.mission.active) txt += '   |   🍾 MISSION pastis : ' + Math.ceil(this.mission.timeLeft) + ' s';
@@ -557,6 +684,13 @@ export class Game {
         }
         if (best && bd < this.vehicleInteractDistance(best)) {
           txt += '   |   E : prendre ' + this.vehicleLabel(best);
+        }
+        if (this.shop) {
+          const kp = this.shop.keeper.group.position;
+          const pd = Math.hypot(this.player.group.position.x - kp.x, this.player.group.position.z - kp.z);
+          if (pd < CONFIG.shop.interactDistance) {
+            txt += '   |   E : gilet pare-balles 🛡' + CONFIG.shop.armor + ' (' + CONFIG.shop.price + ' €)';
+          }
         }
       }
     }

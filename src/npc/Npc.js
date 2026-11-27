@@ -125,7 +125,7 @@ export function pickClientRoad(x, z, ground) {
 
 export class Npc {
 
-  constructor(scene, ground, colliders, road, seed = 0, isPolice = false) {
+  constructor(scene, ground, colliders, road, seed = 0, isPolice = false, customColors = null) {
     this.scene = scene;
     this.ground = ground; // sol solide (terrain + pontons)
     this.colliders = colliders;
@@ -164,7 +164,7 @@ export class Npc {
     // (seed % 3, la n°2 est une femme) façon XIII
     this.humanoid = isPolice
       ? createHumanoid(CONFIG.npc.policeColors)
-      : createHumanoid(null, seed % CONFIG.npc.variants.length);
+      : createHumanoid(customColors, customColors ? -1 : seed % CONFIG.npc.variants.length);
     this.group = this.humanoid.group;
     if (isPolice) addGun(this.humanoid, CONFIG.combat.gunColor); // pistolet visible
     const a = this.road.points[this.segIndex];

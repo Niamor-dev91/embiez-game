@@ -321,6 +321,18 @@ src/world/, src/player/, src/vehicles/, src/npc/, src/utils/
   client (mission.done) ;
   spawnClient() (nouveau PNJ) remet done=false -> la mission se relance en
   re-entrant dans la voiture ; reset au restart
+- Boutique du port (params shop, Game.setupShop) : la plus grande maison à
+  moins de shop.houseMaxDistance du spawn (buildings.biggestNear) reçoit une
+  PORTE = trou de shop.doorWidth dans le mur : son collider OBB plein est
+  remplacé par 4-5 murs (façade porte coupée en 2), toit repeint en JAUNE PASTIS
+  (buildings.paintRoof, couleur par instance, repérable de loin), porte visuelle en bois
+  entrouverte (shop.door), PNJ vendeur à l'intérieur (state 'wait', look
+  shop.keeperColors). Murs/toits des bâtiments en DoubleSide (on voit
+  l'intérieur). E à moins de shop.interactDistance du vendeur = acheter un
+  gilet pare-balles (shop.price €, déduit de player.money) -> player.armor =
+  shop.armor points de bouclier, absorbés EN PRIORITÉ sur les PV dans
+  Player.takeDamage ; HUD '🛡X' + hint 'E : gilet pare-balles'. La voiture
+  (rayon 1.3 m) ne passe pas la porte (1.2 m). armor remis à 0 au restart
 - Pickups (src/world/Pickups.js) : pickups.ammoCount = 10 boîtes de munitions
   (rechargent le revolver à fond) + pickups.healCount = 10 bouteilles de pastis
   (+pickups.healAmount PV), posées le long des routes OSM (seeded, sur terre,

@@ -33,7 +33,8 @@ export class Buildings {
     // 3 InstancedMesh : murs, coquilles (outline), toits
     const walls = new THREE.InstancedMesh(
       new THREE.BoxGeometry(1, 1, 1),
-      new THREE.MeshLambertMaterial({ color: 0xffffff }),
+      // DoubleSide : on voit aussi les murs de l'INTÉRIEUR (boutique du port)
+      new THREE.MeshLambertMaterial({ color: 0xffffff, side: THREE.DoubleSide }),
       n
     );
     const shells = new THREE.InstancedMesh(
@@ -46,7 +47,9 @@ export class Buildings {
       // alignés sur X/Z (comme les murs), donc le scale (w, h, d) + rotation
       // yaw donnent un toit rectangulaire bien aligné sur le bâtiment.
       new THREE.ConeGeometry(1, 1, 4, 1, false, Math.PI / 4),
-      new THREE.MeshLambertMaterial({ color: p.roofColor }),
+      // matériau blanc + couleur PAR INSTANCE (comme les murs) : permet de
+      // repeindre UN seul toit (ex. la boutique en jaune pastis)
+      new THREE.MeshLambertMaterial({ color: 0xffffff, side: THREE.DoubleSide }),
       n
     );
 
@@ -57,6 +60,7 @@ export class Buildings {
     const s = new THREE.Vector3();
     const col = new THREE.Color();
     const winMats = []; // matrices des fenêtres (toutes façades)
+    const colRoof = new THREE.Color(p.roofColor); // couleur par défaut des toits
 
     list.forEach((b, i) => {
       const y = this.terrain.heightAt(b.cx, b.cz);
@@ -100,6 +104,7 @@ export class Buildings {
       s.set(b.w * 0.85, roofH, b.d * 0.85); // léger débord de toit
       m.compose(v, q, s);
       roofs.setMatrixAt(i, m);
+      roofs.setColorAt(i, colRoof);
 
       this.colliders.push({ cx: b.cx, cz: b.cz, w: b.w, d: b.d, yaw: b.yaw });
 
@@ -154,8 +159,29 @@ export class Buildings {
     this.litWindows = [];
     for (let i = 0; i < winMats.length; i++) if (randW() < 0.2) this.litWindows.push(i); // 1 sur 5
     this.windows = windows;
+    this.roofs = roofs; // gardé pour paintRoof (toit de la boutique en jaune)
     this.group.add(walls, shells, roofs, windows);
     console.log('[Buildings] bâtiments posés :', n, '/', osmData.buildings.length, '| fenêtres :', winMats.length, '| allumables :', this.litWindows.length);
+  }
+
+  // La plus grande maison (surface w*d) à moins de maxDist de (x, z) :
+  // retourne l'index dans this.colliders (-1 si aucune) — pour la boutique.
+  biggestNear(x, z, maxDist) {
+    let best = -1;
+    let bestArea = -1;
+    for (let i = 0; i < this.colliders.length; i++) {
+      const c = this.colliders[i];
+      if (Math.hypot(c.cx - x, c.cz - z) > maxDist) continue;
+      const area = c.w * c.d;
+      if (area > bestArea) { bestArea = area; best = i; }
+    }
+    return best;
+  }
+
+  // Repeint le toit d'un bâtiment (index = index dans this.colliders)
+  paintRoof(i, color) {
+    this.roofs.setColorAt(i, new THREE.Color(color));
+    if (this.roofs.instanceColor) this.roofs.instanceColor.needsUpdate = true;
   }
 
   // La nuit : 1 fenêtre sur 5 (celles choisies au hasard) s'allume en jaune
