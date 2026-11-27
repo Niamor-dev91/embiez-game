@@ -308,6 +308,17 @@ src/world/, src/player/, src/vehicles/, src/npc/, src/utils/
   wanted=false + hélico despawn, timeOfDay remis au matin ; KO en véhicule =
   plus de conduite possible (vehicle.update(delta, player.alive)) et la
   position du joueur suit le véhicule (l'hélico/policiers poursuivent la voiture)
+- Mission "Livraison de pastis" (params mission, Game.startMission/updateMission) :
+  PNJ client dédié (Game.spawnClient, state 'wait' = immobile, sur une route à
+  200-500 m du spawn sur la MÊME masse terrestre via pickClientRoad : le segment
+  spawn->client ne traverse pas d'eau, ~500 m) ; la mission démarre quand on
+  entre dans la voiturette (enterVehicle) : 90 s (mission.duration) pour amener
+  la voiture à moins de deliverDistance (10 m) du client, voiture à 20 m/s max.
+  Cylindre lumineux translucide (clientMarker, fog:false = visible de loin)
+  autour du client pendant la mission. Succès/échec -> notice HUD ; HUD
+  '🍾 MISSION pastis : X s'. Une seule fois par PNJ client (mission.done) ;
+  spawnClient() (nouveau PNJ) remet done=false -> la mission se relance en
+  re-entrant dans la voiture ; reset au restart
 - Pickups (src/world/Pickups.js) : pickups.ammoCount = 10 boîtes de munitions
   (rechargent le revolver à fond) + pickups.healCount = 10 bouteilles de pastis
   (+pickups.healAmount PV), posées le long des routes OSM (seeded, sur terre,

@@ -10,7 +10,7 @@ import { Vegetation } from './world/Vegetation.js';
 import { Player } from './player/Player.js';
 import { PlayerCamera } from './player/PlayerCamera.js';
 import { Revolver } from './player/Revolver.js';
-import { Npc, pickRoads, pickPoliceRoads, nearestRoadPoint } from './npc/Npc.js';
+import { Npc, pickRoads, pickPoliceRoads, pickClientRoad, nearestRoadPoint } from './npc/Npc.js';
 import { Car } from './vehicles/Car.js';
 import { TrafficCar, pickTrafficRoads } from './vehicles/TrafficCar.js';
 import { Boat, dockSpots } from './vehicles/Boat.js';
@@ -201,10 +201,37 @@ export class Game {
       new Boat(this.scene, this.ground, { ...spots[i], type: t })
     );
 
+    // PNJ client de la mission "Livraison de pastis" : attend immobile sur la
+    // route la plus éloignée du spawn (de l'autre côté de l'île)
+    this.spawnClient();
+    // Cylindre lumineux translucide autour du client (visible pendant la mission)
+    const mi = CONFIG.mission;
+    this.clientMarker = new THREE.Mesh(
+      new THREE.CylinderGeometry(mi.markerRadius, mi.markerRadius, mi.markerHeight, 24, 1, true),
+      new THREE.MeshBasicMaterial({
+        color: mi.markerColor, transparent: true, opacity: mi.markerOpacity,
+        side: THREE.DoubleSide, depthWrite: false, fog: false, // visible de loin
+      })
+    );
+    this.clientMarker.visible = false;
+    this.scene.add(this.clientMarker);
+    this.mission = { active: false, timeLeft: 0, done: false };
+
     // Hélicoptère de police : inactif au départ, appelé quand le joueur est
     // recherché (il a tiré sur un PNJ)
     this.wanted = false;
     this.heli = new PoliceHelicopter(this.scene, this.ground);
+  }
+
+  // (Re)crée le PNJ client de la mission, sur la route la plus loin du spawn
+  spawnClient() {
+    if (this.client) this.scene.remove(this.client.group);
+    const s = CONFIG.player.spawn;
+    this.client = new Npc(this.scene, this.ground, this.colliders, pickClientRoad(s.x, s.z, this.ground), 779, false);
+    this.client.state = 'wait'; // il attend sa livraison : immobile
+    // Un NOUVEAU PNJ client est défini : la mission peut se relancer
+    // (re-entrer dans la voiture la redéclenche vers ce nouveau client)
+    if (this.mission) this.mission.done = false;
   }
 
   // --- Véhicules (voiturette + bateaux) : entrer / sortir avec E ---
@@ -223,6 +250,9 @@ export class Game {
 
   enterVehicle(v) {
     this.vehicle = v;
+    // Prendre la voiturette déclenche la mission "Livraison de pastis"
+    // (une seule fois par partie : mission.done)
+    if (v === this.car && !this.mission.active && !this.mission.done) this.startMission();
     this.playerCamera.target = v.group;
     // En voiture : vue FPV au poste de conduite (cabine cachée)
     this.playerCamera.driverView = v === this.car;
@@ -264,13 +294,53 @@ export class Game {
     for (let i = 0; i < CONFIG.combat.policeCount; i++) {
       this.npcs.push(new Npc(this.scene, this.ground, this.colliders, policeRoads[i], 100 + i, true));
     }
-    // Pickups, voiturette et bateaux remis en place
+    // Pickups, voiturette, bateaux et PNJ client remis en place
     this.pickups.reset();
     this.car.reset();
     for (const b of this.boats) b.reset();
+    this.spawnClient();
+    this.mission = { active: false, timeLeft: 0, done: false };
+    this.clientMarker.visible = false;
     this.timeOfDay = 0.3; // retour au matin
     this.notice = '';
     this.noticeTimer = 0;
+  }
+
+  // --- Mission "Livraison de pastis" ---
+  // Déclenchée en prenant la voiturette : amener la voiture à moins de
+  // mission.deliverDistance du PNJ client (de l'autre côté de l'île) en
+  // moins de mission.duration secondes.
+  startMission() {
+    this.mission.active = true;
+    this.mission.done = true; // la mission ne se relance pas à la prochaine entrée
+    this.mission.timeLeft = CONFIG.mission.duration;
+    this.clientMarker.visible = true;
+    this.notice = 'MISSION : livre le pastis au cylindre doré, de l\'autre côté de l\'île !';
+    this.noticeTimer = 5;
+  }
+
+  updateMission(delta) {
+    if (!this.mission.active) return;
+    this.mission.timeLeft -= delta;
+    const c = this.client.group.position;
+    // Le cylindre lumineux suit le client
+    this.clientMarker.position.set(
+      c.x,
+      this.ground.heightAt(c.x, c.z) + CONFIG.mission.markerHeight / 2,
+      c.z
+    );
+    const d = Math.hypot(this.car.pos.x - c.x, this.car.pos.z - c.z);
+    if (d < CONFIG.mission.deliverDistance) {
+      this.mission.active = false;
+      this.clientMarker.visible = false;
+      this.notice = 'Livraison réussie ! 🍾';
+      this.noticeTimer = 6;
+    } else if (this.mission.timeLeft <= 0) {
+      this.mission.active = false;
+      this.clientMarker.visible = false;
+      this.notice = 'Mission échouée : temps écoulé !';
+      this.noticeTimer = 6;
+    }
   }
 
   // --- Cycle jour/nuit : 12 min de soleil puis 12 min de lune ---
@@ -340,6 +410,7 @@ export class Game {
       this.player.group.position.set(this.vehicle.pos.x, this.vehicle.pos.y, this.vehicle.pos.z);
     }
     for (const npc of this.npcs) npc.update(delta, this.player);
+    this.client.update(delta, this.player);
     this.heli.update(delta, this.player, this.wanted);
     if (this.mode === 'debug') {
       this.debugCamera.update(delta);
@@ -439,6 +510,8 @@ export class Game {
         }
         if (!this.vehicle) resolveCircleVsCircle(tc.pos, tc.radius, this.car.pos, CONFIG.vehicle.radius);
       }
+      // Mission "Livraison de pastis" : timer + succès si la voiture est assez proche du client
+      this.updateMission(delta);
       this.playerCamera.update(delta);
     }
     // Les voitures de circulation avancent dans TOUS les modes (même debug F8)
@@ -464,6 +537,7 @@ export class Game {
       txt = 'PV : ' + this.player.hp + '/' + CONFIG.combat.playerHp + '   |   ' + ammoTxt + '   |   clic ou F = tirer';
       if (this.wanted) txt += '   |   ⚠ RECHERCHÉ';
       if (this.heli.state === 'active') txt += '   |   hélico ' + this.heli.hp + '/' + this.heli.maxHp + ' PV';
+      if (this.mission.active) txt += '   |   🍾 MISSION pastis : ' + Math.ceil(this.mission.timeLeft) + ' s';
       if (this.vehicle) {
         const pan = this.vehicle === this.car && this.car.broken
           ? "   |   PANNE ! (trop longtemps dans l'eau)"

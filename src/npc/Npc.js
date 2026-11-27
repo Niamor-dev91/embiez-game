@@ -99,6 +99,30 @@ export function pickPoliceRoads(count, taken) {
     .map((o) => o.r);
 }
 
+// Route pour le PNJ client de la mission "Livraison de pastis" : assez loin du
+// spawn (mission.clientMinDistance..clientMaxDistance) mais sur la MÊME masse
+// terrestre — le segment spawn -> centre ne doit traverser aucune eau (sinon
+// la voiture tomberait en panne dans l'eau avant d'arriver).
+export function pickClientRoad(x, z, ground) {
+  const m = CONFIG.mission;
+  let best = null;
+  let bd = -1;
+  for (const r of osmData.roads) {
+    if (!PATH_KINDS.includes(r.kind) || roadLength(r) < 50) continue;
+    const [cx, cz] = centroidOf(r.points);
+    const d = Math.hypot(cx - x, cz - z);
+    if (d < m.clientMinDistance || d > m.clientMaxDistance) continue;
+    let water = false;
+    for (let i = 0; i <= 20; i++) {
+      const t = i / 20;
+      if (ground.heightAt(x + (cx - x) * t, z + (cz - z) * t) < 0) { water = true; break; }
+    }
+    if (water) continue;
+    if (d > bd) { bd = d; best = r; }
+  }
+  return best || pickRoads(1)[0];
+}
+
 export class Npc {
 
   constructor(scene, ground, colliders, road, seed = 0, isPolice = false) {
@@ -175,6 +199,11 @@ export class Npc {
   // player = le joueur ({ group, radius, alive, takeDamage }) ou null
   update(delta, player) {
     if (this.state === 'dead') return;
+    if (this.state === 'wait') {
+      // PNJ client d'une mission : il attend, immobile, juste calé sur le sol
+      this.group.position.y = this.ground.heightAt(this.group.position.x, this.group.position.z);
+      return;
+    }
     const p = CONFIG.npc;
     const c = CONFIG.combat;
     const pos = this.group.position;

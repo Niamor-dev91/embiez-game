@@ -99,8 +99,8 @@ export const CONFIG = {
     driverForward: 0.35,     // décalage vers l'avant du poste de conduite (m)
     wheelRadius: 0.35,
     radius: 1.3,             // rayon de collision de la voiture
-    maxSpeed: 14,            // m/s en avant
-    maxReverseSpeed: 5,      // m/s en marche arrière
+    maxSpeed: 20,            // m/s en avant
+    maxReverseSpeed: 6,      // m/s en marche arrière
     acceleration: 8,         // m/s²
     brake: 12,               // frein / marche arrière
     friction: 3,             // ralentissement naturel (m/s²)
@@ -181,6 +181,18 @@ export const CONFIG = {
       skid: 0x333338,       // patins
       beacon: 0xff2a2a,     // gyrophare
     },
+  },
+
+  // --- Mission "Livraison de pastis" (déclenchée en prenant la voiturette) ---
+  mission: {
+    duration: 90,          // temps pour livrer le pastis (secondes) : 1 min 30
+    deliverDistance: 10,   // la voiture doit être à moins de ça du client (m)
+    markerColor: 0xffc040, // cylindre lumineux translucide autour du client
+    markerRadius: 10,      // rayon du cylindre (= deliverDistance, visible de loin)
+    markerHeight: 9,       // hauteur du cylindre (m)
+    markerOpacity: 0.3,
+    clientMinDistance: 200, // le client est placé entre 200 et 500 m du spawn...
+    clientMaxDistance: 500, // ...sur la même masse terrestre (pas d'eau entre les deux)
   },
 
   // --- PNJ (touristes qui marchent sur les routes OSM) ---
