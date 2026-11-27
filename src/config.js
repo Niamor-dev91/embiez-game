@@ -174,6 +174,22 @@ export const CONFIG = {
     },
   },
 
+  // --- Cycle jour/nuit : 12 min de soleil + 12 min de lune ---
+  dayNight: {
+    dayMinutes: 12,
+    nightMinutes: 12,
+    skyDay: 0x55b8ff,        // ciel jour (bleu vif, actuel)
+    skyNight: 0x0a1230,      // ciel nuit
+    seaNight: 0x0a2a4a,      // mer la nuit
+    sunDay: 0xfff2d8,        // soleil (chaud)
+    sunNight: 0x8899ff,      // lune (froid)
+    sunDayIntensity: 1.0,
+    sunNightIntensity: 0.35,
+    ambientDay: 0.8,
+    ambientNight: 0.25,
+    headlightIntensity: 120, // phares de voiture (SpotLight, candela)
+  },
+
   // --- Pickups (munitions + pastis) ---
   pickups: {
     ammoCount: 10,           // boîtes de munitions sur la map (rechargent le revolver)

@@ -59,10 +59,17 @@ export class Car {
     const lightGeo = new THREE.CylinderGeometry(0.09, 0.09, 0.06, 8);
     lightGeo.rotateX(Math.PI / 2);
     const lightMat = new THREE.MeshLambertMaterial({ color: v.headlightColor });
+    this.headlights = [];
     for (const x of [-0.55, 0.55]) {
       const l = new THREE.Mesh(lightGeo, lightMat);
       l.position.set(x, 0.95, 2.1);
       this.hull.add(l);
+      // Spot réel : éclaire la route devant la voiture (allumé la nuit)
+      const spot = new THREE.SpotLight(v.headlightColor, 0, 45, 0.55, 0.45, 1.4);
+      spot.position.set(x, 0.95, 2.1);
+      spot.target.position.set(x, 0.2, 14);
+      this.group.add(spot, spot.target);
+      this.headlights.push(spot);
     }
     // Pare-chocs avant / arrière
     box(1.9, 0.15, 0.15, chromeMat, 0, 0.42, 2.18);
@@ -106,6 +113,12 @@ export class Car {
   // En vue conducteur FPV, on cache toit + cabine + portes (on voit par le pare-brise)
   setCabinVisible(visible) {
     if (this.cabinTop) this.cabinTop.visible = visible;
+  }
+
+  // Phares allumés (nuit) / éteints (jour)
+  setHeadlights(on) {
+    const i = on ? CONFIG.dayNight.headlightIntensity : 0;
+    for (const s of this.headlights) s.intensity = i;
   }
 
   update(delta) {

@@ -92,7 +92,22 @@ export class TrafficCar {
       this.wheels.push(w);
     }
     g.rotation.order = 'YXZ';
+
+    // 2 phares (SpotLight) allumés la nuit
+    this.headlights = [];
+    for (const x of [-0.55, 0.55]) {
+      const spot = new THREE.SpotLight(0xfff8c0, 0, 40, 0.55, 0.45, 1.4);
+      spot.position.set(x, 0.95, 2.1);
+      spot.target.position.set(x, 0.2, 12);
+      g.add(spot, spot.target);
+      this.headlights.push(spot);
+    }
     return g;
+  }
+
+  setHeadlights(on) {
+    const i = on ? CONFIG.dayNight.headlightIntensity : 0;
+    for (const s of this.headlights) s.intensity = i;
   }
 
   update(delta) {

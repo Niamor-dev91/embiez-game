@@ -58,7 +58,12 @@ src/world/, src/player/, src/vehicles/, src/npc/, src/utils/
 
 ### Rendu (style rétro GTA III)
 - Pas d'antialiasing, pixel ratio max = 1
-- Ciel = couleur unie 0x87ceeb, pas de skybox
+- Ciel = couleur unie, pas de skybox — avec CYCLE JOUR/NUIT (Game.updateDayNight,
+  config dayNight : 12 min de soleil + 12 min de lune = 24 min) : ciel/brouillard/
+  mer lerp jour<->nuit, soleil tourne (midi au zénith) puis lune la nuit,
+  ambient varie ; HUD affiche ☀/☾ + heure
+- Phares de la voiturette ET des voitures de trafic : 2 SpotLight à l'avant,
+  allumés automatiquement la nuit (setHeadlights, headlightIntensity)
 - Brouillard linéaire (THREE.Fog) de même couleur que le ciel,
   de 200 m à 2500 m (le terrain fait 2000 m de large, il faut voir l'île en entier)
 - Matériaux : MeshLambertMaterial (pas de PBR), flatShading sur la mer

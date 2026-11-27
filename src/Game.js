@@ -34,6 +34,8 @@ export class Game {
     this.eHeld = false;  // détection de front montant pour la touche E
     this.notice = '';    // message temporaire (pickup ramassé...)
     this.noticeTimer = 0;
+    this.timeOfDay = 0.3; // 0..1, 0.25 = midi ; on démarre en journée
+    this.isNight = false;
 
     this.initRenderer();
     this.initScene();
@@ -84,11 +86,11 @@ export class Game {
       CONFIG.sky.fogFar
     );
 
-    // Lumières simples
-    const ambient = new THREE.AmbientLight(0xffffff, 0.8);
-    const sun = new THREE.DirectionalLight(0xffffff, 1.0);
-    sun.position.set(50, 100, 30);
-    this.scene.add(ambient, sun);
+    // Lumières simples (réfs gardées pour le cycle jour/nuit)
+    this.ambient = new THREE.AmbientLight(0xffffff, 0.8);
+    this.sun = new THREE.DirectionalLight(0xffffff, 1.0);
+    this.sun.position.set(50, 100, 30);
+    this.scene.add(this.ambient, this.sun);
   }
 
   initCamera() {
@@ -201,9 +203,44 @@ export class Game {
     this.player.group.position.set(px, this.ground.heightAt(px, pz), pz);
   }
 
+  // --- Cycle jour/nuit : 12 min de soleil puis 12 min de lune ---
+  updateDayNight(delta) {
+    const d = CONFIG.dayNight;
+    const cycle = (d.dayMinutes + d.nightMinutes) * 60; // 24 min
+    this.timeOfDay = (this.timeOfDay + delta / cycle) % 1;
+    const a = this.timeOfDay * Math.PI * 2;
+    const sunH = Math.sin(a); // > 0 le jour, < 0 la nuit
+    // facteur jour 0..1 (lisse au lever/coucher)
+    const dayF = Math.max(0, Math.min(1, sunH / 0.25));
+    this.isNight = sunH < 0;
+
+    // Ciel + brouillard
+    const sky = new THREE.Color(d.skyNight).lerp(new THREE.Color(d.skyDay), dayF);
+    this.scene.background = sky;
+    this.scene.fog.color.copy(sky);
+    // Mer
+    this.sea.mesh.material.color.set(d.seaNight).lerp(new THREE.Color(CONFIG.sea.color), dayF);
+    // Soleil le jour, lune la nuit
+    if (sunH >= 0) {
+      this.sun.position.set(Math.cos(a) * 100, sunH * 100, 40);
+      this.sun.color.set(d.sunDay);
+      this.sun.intensity = d.sunDayIntensity * (0.3 + 0.7 * dayF);
+    } else {
+      const m = -sunH;
+      this.sun.position.set(-Math.cos(a) * 100, m * 80, 40);
+      this.sun.color.set(d.sunNight);
+      this.sun.intensity = d.sunNightIntensity;
+    }
+    this.ambient.intensity = d.ambientNight + (d.ambientDay - d.ambientNight) * dayF;
+    // Phares des voitures allumés la nuit
+    if (this.car.setHeadlights) this.car.setHeadlights(this.isNight);
+    for (const tc of this.traffic) if (tc.setHeadlights) tc.setHeadlights(this.isNight);
+  }
+
   // --- Mises à jour ---
 
   update(delta) {
+    this.updateDayNight(delta);
     this.sea.update(delta);
     for (const npc of this.npcs) npc.update(delta, this.player);
     if (this.mode === 'debug') {
@@ -342,6 +379,9 @@ export class Game {
       }
     }
     if (this.noticeTimer > 0 && this.player.alive) txt += '   |   ' + this.notice;
+    // indicateur jour/nuit + heure
+    const heure = Math.floor(this.timeOfDay * 24);
+    txt += '   |   ' + (this.isNight ? '☾' : '☀') + ' ' + heure + 'h';
     if (txt !== this.lastHud) {
       this.hud.textContent = txt;
       this.lastHud = txt;
