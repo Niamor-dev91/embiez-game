@@ -287,9 +287,16 @@ src/world/, src/player/, src/vehicles/, src/npc/, src/utils/
 - Conduite sur l'eau ZQSD ; le bateau s'ARRÊTE au contact de la terre ou
   d'un ponton : si ground.heightAt(nouvelle pos) >= 0, le déplacement est
   annulé et speed = 0
-- Game gère un véhicule générique (this.vehicle = car ou boat) : E monte
-  dans le véhicule le plus proche, caméra 3e personne dessus ; à pied le
-  joueur ne traverse aucun véhicule
+- Game gère un véhicule générique (this.vehicle = car, heliVehicle ou boat) :
+  E monte dans le véhicule le plus proche ; à pied le joueur ne traverse aucun
+  véhicule
+- src/vehicles/Helicopter.js : hélicoptère CIVIL pilotable (params heli), même
+  mesh que la police via buildHeliMesh (exporté par PoliceHelicopter.js, sans
+  gyrophare). Posé en haut d'une colline via findHilltop (point le plus haut
+  entre heli.parkMinDistance et parkMaxDistance du spawn, ~700 m / 43 m ici).
+  Conduite : W/S avant-arrière, A/D yaw, Shift monte, Space descend, vol
+  stationnaire sinon ; sol/mer (patins à 1.2 m) + plafond maxAltitude ;
+  caméra 3e personne (cameraDistance), E pour monter, reset() au restart
 
 ### Combat (pistolet, points de vie)
 - src/utils/Combat.js : fireHitscan (droite origine+direction vs cibles,

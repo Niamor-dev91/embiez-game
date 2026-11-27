@@ -16,6 +16,8 @@ import { TrafficCar, pickTrafficRoads } from './vehicles/TrafficCar.js';
 import { Boat, dockSpots } from './vehicles/Boat.js';
 
 import { PoliceHelicopter } from './vehicles/PoliceHelicopter.js';
+
+import { Helicopter, findHilltop } from './vehicles/Helicopter.js';
 import { DebugCamera } from './utils/DebugCamera.js';
 import { Input, pollGamepad } from './utils/Input.js';
 import { resolveCircleVsCircle } from './utils/Collisions.js';
@@ -210,6 +212,14 @@ export class Game {
       new Boat(this.scene, this.ground, { ...spots[i], type: t })
     );
 
+    // Hélicoptère civil pilotable, posé en haut d'une colline (ni trop proche
+    // ni trop loin du spawn)
+    const hill = findHilltop(this.ground, s.x, s.z, CONFIG.heli.parkMinDistance, CONFIG.heli.parkMaxDistance);
+    this.heliVehicle = new Helicopter(this.scene, this.ground, colliders, hill);
+    console.log('[Heli] hélicoptère posé à (' + hill.x.toFixed(0) + ', ' + hill.z.toFixed(0) + ') | altitude '
+      + this.ground.heightAt(hill.x, hill.z).toFixed(1) + ' m | dist spawn '
+      + Math.hypot(hill.x - s.x, hill.z - s.z).toFixed(0) + ' m');
+
     // PNJ client de la mission "Livraison de pastis" : attend immobile sur la
     // route la plus éloignée du spawn (de l'autre côté de l'île)
     this.spawnClient();
@@ -247,7 +257,7 @@ export class Game {
   // --- Véhicules (voiturette + bateaux) : entrer / sortir avec E ---
 
   get vehicles() {
-    return [this.car, ...this.boats];
+    return [this.car, this.heliVehicle, ...this.boats];
   }
 
   vehicleLabel(v) {
@@ -255,7 +265,8 @@ export class Game {
   }
 
   vehicleInteractDistance(v) {
-    return v === this.car ? CONFIG.vehicle.interactDistance : CONFIG.boat.interactDistance;
+    return v.interactDistance
+      || (v === this.car ? CONFIG.vehicle.interactDistance : CONFIG.boat.interactDistance);
   }
 
   enterVehicle(v) {
@@ -264,10 +275,11 @@ export class Game {
     // (une seule fois par partie : mission.done)
     if (v === this.car && !this.mission.active && !this.mission.done) this.startMission();
     this.playerCamera.target = v.group;
-    // En voiture : vue FPV au poste de conduite (cabine cachée)
-    this.playerCamera.driverView = v === this.car;
-    if (v === this.car) v.setCabinVisible(false);
-    this.playerCamera.distance = v === this.car ? CONFIG.vehicle.cameraDistance : CONFIG.boat.cameraDistance;
+    // En voiture : vue FPV au poste de conduite (cabine cachée) ; hélico/bateaux : 3e personne
+    this.playerCamera.driverView = v === this.car || v.driverView === true;
+    if (v.setCabinVisible) v.setCabinVisible(false);
+    this.playerCamera.distance = v.cameraDistance
+      || (v === this.car ? CONFIG.vehicle.cameraDistance : CONFIG.boat.cameraDistance);
   }
 
   exitVehicle() {
@@ -275,7 +287,7 @@ export class Game {
     this.vehicle = null;
     this.playerCamera.target = this.player.group; // retour en FPS
     this.playerCamera.driverView = false;
-    if (v === this.car) v.setCabinVisible(true);
+    if (v.setCabinVisible) v.setCabinVisible(true);
     this.playerCamera.distance = CONFIG.playerCamera.distance;
     // Le joueur réapparaît à côté du véhicule, sur le sol
     const p = v.pos;
@@ -308,6 +320,7 @@ export class Game {
     // Pickups, voiturette, bateaux et PNJ client remis en place
     this.pickups.reset();
     this.car.reset();
+    this.heliVehicle.reset();
     for (const b of this.boats) b.reset();
     this.spawnClient();
     this.mission = { active: false, timeLeft: 0, done: false };

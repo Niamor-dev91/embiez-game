@@ -8,6 +8,70 @@ import { addOutline } from '../utils/Outline.js';
 // (il a tiré sur un PNJ). Il arrive par les airs, vole en orbite au-dessus du
 // joueur et lui tire des rafales. À 0 PV il tombe en vrille et prend feu au sol.
 
+// Mesh partagé hélicoptère de police / hélicoptère pilotable :
+// fuselage + vitres + bande + queue + dérive + patins (outline toon) +
+// gyrophare (si c.beacon) + rotor principal 4 pales (animé par l'appelante).
+export function buildHeliMesh(c) {
+  const g = new THREE.Group();
+  g.rotation.order = 'YXZ';
+  const body = new THREE.Group();
+  const matBody = new THREE.MeshLambertMaterial({ color: c.body });
+  const matDark = new THREE.MeshLambertMaterial({ color: c.dark });
+  const matGlass = new THREE.MeshLambertMaterial({ color: c.glass });
+  const matStripe = new THREE.MeshLambertMaterial({ color: c.stripe });
+  const matSkid = new THREE.MeshLambertMaterial({ color: c.skid });
+  const fuselage = new THREE.Mesh(new THREE.BoxGeometry(2, 1.6, 5.5), matBody);
+  body.add(fuselage);
+  const nose = new THREE.Mesh(new THREE.BoxGeometry(1.7, 1.15, 1.7), matGlass);
+  nose.position.set(0, -0.15, 2.75);
+  body.add(nose);
+  const stripe = new THREE.Mesh(new THREE.BoxGeometry(2.04, 0.35, 3.4), matStripe);
+  stripe.position.set(0, 0.3, -0.7);
+  body.add(stripe);
+  const tail = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.55, 3.4), matDark);
+  tail.position.set(0, 0.35, -4.2);
+  body.add(tail);
+  const fin = new THREE.Mesh(new THREE.BoxGeometry(0.16, 1.3, 0.9), matDark);
+  fin.position.set(0, 1.0, -5.5);
+  body.add(fin);
+  const tailRotor = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.4, 0.25), matDark);
+  tailRotor.position.set(0.32, 0.6, -5.7);
+  body.add(tailRotor);
+  for (const x of [-0.85, 0.85]) {
+    const skid = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.16, 3.8), matSkid);
+    skid.position.set(x, -1.15, 0);
+    body.add(skid);
+    for (const z of [1.3, -1.3]) {
+      const strut = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.75, 0.12), matSkid);
+      strut.position.set(x, -0.72, z);
+      body.add(strut);
+    }
+  }
+  let beacon = null;
+  if (c.beacon) {
+    beacon = new THREE.Mesh(
+      new THREE.SphereGeometry(0.18, 8, 8),
+      new THREE.MeshBasicMaterial({ color: c.beacon })
+    );
+    beacon.position.set(0, 0.95, 0.9);
+    body.add(beacon);
+  }
+  addOutline(body, 1.06, CONFIG.props.outlineColor);
+  g.add(body);
+  const rotor = new THREE.Group();
+  const matRotor = new THREE.MeshLambertMaterial({ color: c.rotor });
+  for (let i = 0; i < 4; i++) {
+    const blade = new THREE.Mesh(new THREE.BoxGeometry(6.6, 0.07, 0.32), matRotor);
+    blade.rotation.y = (i * Math.PI) / 2;
+    rotor.add(blade);
+  }
+  const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.35, 8), matRotor);
+  rotor.add(hub);
+  rotor.position.set(0, 1.05, 0);
+  g.add(rotor);
+  return { group: g, body, rotor, beacon };
+}
+
 export class PoliceHelicopter {
 
   constructor(scene, ground) {
@@ -35,70 +99,10 @@ export class PoliceHelicopter {
 
   buildMesh() {
     const h = CONFIG.policeHeli;
-    const c = h.colors;
-    const g = new THREE.Group();
-    g.rotation.order = 'YXZ';
-
-    // Partie statique (avec outline toon) : fuselage, vitres, queue, patins
-    const body = new THREE.Group();
-    const matBody = new THREE.MeshLambertMaterial({ color: c.body });
-    const matDark = new THREE.MeshLambertMaterial({ color: c.dark });
-    const matGlass = new THREE.MeshLambertMaterial({ color: c.glass });
-    const matStripe = new THREE.MeshLambertMaterial({ color: c.stripe });
-    const matSkid = new THREE.MeshLambertMaterial({ color: c.skid });
-
-    const fuselage = new THREE.Mesh(new THREE.BoxGeometry(2, 1.6, 5.5), matBody);
-    body.add(fuselage);
-    const nose = new THREE.Mesh(new THREE.BoxGeometry(1.7, 1.15, 1.7), matGlass);
-    nose.position.set(0, -0.15, 2.75);
-    body.add(nose);
-    const stripe = new THREE.Mesh(new THREE.BoxGeometry(2.04, 0.35, 3.4), matStripe);
-    stripe.position.set(0, 0.3, -0.7);
-    body.add(stripe);
-    const tail = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.55, 3.4), matDark);
-    tail.position.set(0, 0.35, -4.2);
-    body.add(tail);
-    const fin = new THREE.Mesh(new THREE.BoxGeometry(0.16, 1.3, 0.9), matDark);
-    fin.position.set(0, 1.0, -5.5);
-    body.add(fin);
-    // Rotor de queue (statique)
-    const tailRotor = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.4, 0.25), matDark);
-    tailRotor.position.set(0.32, 0.6, -5.7);
-    body.add(tailRotor);
-    // Patins d'atterrissage
-    for (const x of [-0.85, 0.85]) {
-      const skid = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.16, 3.8), matSkid);
-      skid.position.set(x, -1.15, 0);
-      body.add(skid);
-      for (const z of [1.3, -1.3]) {
-        const strut = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.75, 0.12), matSkid);
-        strut.position.set(x, -0.72, z);
-        body.add(strut);
-      }
-    }
-    // Gyrophare rouge qui clignote
-    this.beacon = new THREE.Mesh(
-      new THREE.SphereGeometry(0.18, 8, 8),
-      new THREE.MeshBasicMaterial({ color: c.beacon })
-    );
-    this.beacon.position.set(0, 0.95, 0.9);
-    body.add(this.beacon);
-    addOutline(body, 1.06, CONFIG.props.outlineColor);
-    g.add(body);
-
-    // Rotor principal : 4 pales qui tournent (hors outline)
-    this.rotor = new THREE.Group();
-    const matRotor = new THREE.MeshLambertMaterial({ color: c.rotor });
-    for (let i = 0; i < 4; i++) {
-      const blade = new THREE.Mesh(new THREE.BoxGeometry(6.6, 0.07, 0.32), matRotor);
-      blade.rotation.y = (i * Math.PI) / 2;
-      this.rotor.add(blade);
-    }
-    const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.35, 8), matRotor);
-    this.rotor.add(hub);
-    this.rotor.position.set(0, 1.05, 0);
-    g.add(this.rotor);
-
+    const built = buildHeliMesh(h.colors); // mesh partagé (fuselage + rotor + gyrophare)
+    const g = built.group;
+    this.rotor = built.rotor;
+    this.beacon = built.beacon;
     // Projecteur de recherche vers le bas (allumé la nuit)
     this.spot = new THREE.SpotLight(0xfff8e0, 0, 160, 0.5, 0.5, 1.2);
     this.spot.position.set(0, -0.6, 2.6);

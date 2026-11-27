@@ -125,6 +125,26 @@ export const CONFIG = {
     tiltSpeed: 10,           // vitesse de lissage de l'inclinaison sur le terrain
   },
 
+  // --- Hélicoptère civil pilotable (posé en haut d'une colline) ---
+  heli: {
+    parkMinDistance: 300,  // posé sur la colline la plus haute entre 300 et 700 m du spawn
+    parkMaxDistance: 700,
+    maxSpeed: 25,          // m/s en avant
+    maxReverseSpeed: 6,
+    acceleration: 10,
+    brake: 8,
+    friction: 2,
+    turnSpeed: 1.6,        // rad/s (A/D)
+    climbSpeed: 8,         // m/s vertical max (Shift = monter, Space = descendre)
+    climbAccel: 14,
+    climbFriction: 6,      // retour au vol stationnaire sans input
+    maxAltitude: 150,      // plafond de vol (m)
+    radius: 3,             // rayon de collision
+    cameraDistance: 12,    // caméra 3e personne
+    interactDistance: 4,   // E pour monter à bord
+    colors: { body: 0xe8e8e8, dark: 0x8a2a2a, glass: 0x9fc8e8, stripe: 0xd84a2a, rotor: 0x222228, skid: 0x333338 },
+  },
+
   // --- Bateaux du port (voilier, moteur, jetski) ---
   boat: {
     types: ['voilier', 'moteur', 'jetski'],
