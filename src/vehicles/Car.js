@@ -5,7 +5,8 @@ import { Input } from '../utils/Input.js';
 import { resolveCollisions } from '../utils/Collisions.js';
 import { addOutline } from '../utils/Outline.js';
 
-// Voiturette électrique low-poly (caisse + habitacle + 4 roues).
+// Pick-up low-poly façon XIII (1re mission) : capot long + calandre + phares,
+// cabine vitrée, benne ouverte, pare-chocs, 4 grosses roues.
 // Conduite arcade : ZQSD (W = accélérer, S = frein/marche arrière,
 // A/D = tourner, seulement si la voiture roule). Reste sur le terrain
 // (heightAt) et bloquée par les bâtiments.
@@ -33,35 +34,78 @@ export class Car {
     return this.group.position;
   }
 
+  // Pick-up façon XIII (1re mission) : capot long, calandre chromée, phares,
+  // cabine vitrée, benne arrière ouverte, pare-chocs, grosses roues.
+  // L'avant de la voiture est +Z. Le tout dans un sous-groupe avec outline toon.
   createMesh() {
     const v = CONFIG.vehicle;
-    // Carrosserie dans un sous-groupe, avec outline toon
     this.hull = new THREE.Group();
-    const body = new THREE.Mesh(
-      new THREE.BoxGeometry(1.6, 0.5, 3),
-      new THREE.MeshLambertMaterial({ color: v.bodyColor })
-    );
-    body.position.y = 0.6;
-    const cabin = new THREE.Mesh(
-      new THREE.BoxGeometry(1.4, 0.55, 1.4),
-      new THREE.MeshLambertMaterial({ color: v.cabinColor })
-    );
-    cabin.position.set(0, 1.1, -0.2);
-    this.hull.add(body, cabin);
+    const bodyMat = new THREE.MeshLambertMaterial({ color: v.bodyColor });
+    const glassMat = new THREE.MeshLambertMaterial({ color: v.cabinColor });
+    const chromeMat = new THREE.MeshLambertMaterial({ color: v.chromeColor });
+    const box = (w, h, d, mat, x, y, z) => {
+      const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+      m.position.set(x, y, z);
+      this.hull.add(m);
+      return m;
+    };
+
+    // Châssis
+    box(1.8, 0.35, 4.2, bodyMat, 0, 0.55, 0);
+    // Capot long à l'avant
+    box(1.7, 0.45, 1.6, bodyMat, 0, 0.95, 1.3);
+    // Calandre chromée + 2 phares
+    box(1.2, 0.5, 0.1, chromeMat, 0, 0.9, 2.06);
+    const lightGeo = new THREE.CylinderGeometry(0.09, 0.09, 0.06, 8);
+    lightGeo.rotateX(Math.PI / 2);
+    const lightMat = new THREE.MeshLambertMaterial({ color: v.headlightColor });
+    for (const x of [-0.55, 0.55]) {
+      const l = new THREE.Mesh(lightGeo, lightMat);
+      l.position.set(x, 0.95, 2.1);
+      this.hull.add(l);
+    }
+    // Pare-chocs avant / arrière
+    box(1.9, 0.15, 0.15, chromeMat, 0, 0.42, 2.18);
+    box(1.9, 0.15, 0.15, chromeMat, 0, 0.42, -2.18);
+    // Cabine vitrée + toit + 2 portes (cachés en vue conducteur FPV).
+    // Chaque porte : moitié BASSE carrosserie, moitié HAUTE vitrée (bleue).
+    this.cabinTop = new THREE.Group();
+    const cabin = box(1.7, 0.7, 1.3, glassMat, 0, 1.2, -0.2);
+    const roof = box(1.7, 0.08, 1.35, bodyMat, 0, 1.6, -0.2);
+    for (const x of [-0.88, 0.88]) {
+      this.cabinTop.add(box(0.06, 0.35, 1.2, bodyMat, x, 1.02, -0.2)); // bas : carrosserie
+      this.cabinTop.add(box(0.06, 0.35, 1.2, glassMat, x, 1.38, -0.2)); // haut : vitre bleue
+    }
+    this.cabinTop.add(cabin, roof);
+    // groupe séparé (avec son propre outline) pour pouvoir tout cacher en FPV
+    this.group.add(this.cabinTop);
+    addOutline(this.cabinTop, 1.06, CONFIG.props.outlineColor);
+    // Benne arrière ouverte : fond + 4 bordures
+    box(1.7, 0.1, 1.2, bodyMat, 0, 0.75, -1.5);
+    box(1.7, 0.35, 0.08, bodyMat, 0, 0.95, -0.95);
+    box(1.7, 0.35, 0.08, bodyMat, 0, 0.95, -2.05);
+    box(0.08, 0.35, 1.2, bodyMat, -0.85, 0.95, -1.5);
+    box(0.08, 0.35, 1.2, bodyMat, 0.85, 0.95, -1.5);
+
     addOutline(this.hull, 1.06, CONFIG.props.outlineColor);
     this.group.add(this.hull);
 
-    // 4 roues (cylindres couchés)
+    // 4 grosses roues (cylindres couchés)
     this.wheels = [];
-    const wheelGeo = new THREE.CylinderGeometry(v.wheelRadius, v.wheelRadius, 0.3, 8);
+    const wheelGeo = new THREE.CylinderGeometry(v.wheelRadius, v.wheelRadius, 0.35, 10);
     wheelGeo.rotateZ(Math.PI / 2);
-    const wheelMat = new THREE.MeshLambertMaterial({ color: 0x222222 });
-    for (const [x, z] of [[-0.8, 1.1], [0.8, 1.1], [-0.8, -1.1], [0.8, -1.1]]) {
+    const wheelMat = new THREE.MeshLambertMaterial({ color: 0x181818 });
+    for (const [x, z] of [[-0.85, 1.4], [0.85, 1.4], [-0.85, -1.4], [0.85, -1.4]]) {
       const w = new THREE.Mesh(wheelGeo, wheelMat);
       w.position.set(x, v.wheelRadius, z);
       this.group.add(w);
       this.wheels.push(w);
     }
+  }
+
+  // En vue conducteur FPV, on cache toit + cabine + portes (on voit par le pare-brise)
+  setCabinVisible(visible) {
+    if (this.cabinTop) this.cabinTop.visible = visible;
   }
 
   update(delta) {

@@ -179,6 +179,9 @@ export class Game {
   enterVehicle(v) {
     this.vehicle = v;
     this.playerCamera.target = v.group;
+    // En voiture : vue FPV au poste de conduite (cabine cachée)
+    this.playerCamera.driverView = v === this.car;
+    if (v === this.car) v.setCabinVisible(false);
     this.playerCamera.distance = v === this.car ? CONFIG.vehicle.cameraDistance : CONFIG.boat.cameraDistance;
   }
 
@@ -186,6 +189,8 @@ export class Game {
     const v = this.vehicle;
     this.vehicle = null;
     this.playerCamera.target = this.player.group; // retour en FPS
+    this.playerCamera.driverView = false;
+    if (v === this.car) v.setCabinVisible(true);
     this.playerCamera.distance = CONFIG.playerCamera.distance;
     // Le joueur réapparaît à côté du véhicule, sur le sol
     const p = v.pos;

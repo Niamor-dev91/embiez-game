@@ -220,7 +220,14 @@ src/world/, src/player/, src/vehicles/, src/npc/, src/utils/
   les PNJ et la voiturette garée les font dévier (elles cèdent)
 
 ### Voiturette électrique (étape 5)
-- src/vehicles/Car.js : caisse + habitacle + 4 roues (qui tournent),
+- src/vehicles/Car.js : pick-up façon XIII 1re mission (capot long, calandre
+  chromée, 2 phares, cabine vitrée + toit + 2 portes, benne arrière ouverte,
+  pare-chocs, 4 grosses roues qui tournent), outline toon, couleurs vives
+  vehicle.*Color ; setCabinVisible(false) cache cabine+portes en FPV conducteur
+- En voiture (E) : vue FPV au poste de conduite (PlayerCamera.driverView,
+  caméra à vehicle.driverEye + driverForward, toit/cabine/portes cachés),
+  la souris fait tourner la caméra indépendamment de la voiture ; bateaux
+  restent en 3e personne,
   conduite arcade (W accélère, S frein/marche arrière, A/D tourne seulement
   si ça roule), sol via heightAt, collisions bâtiments, limites du monde
 - Garée via nearestRoadPoint(spawn) = point de route OSM le plus proche

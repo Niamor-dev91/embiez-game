@@ -91,8 +91,12 @@ export const CONFIG = {
   },
 
   vehicle: {
-    bodyColor: 0xf0c020,     // carrosserie jaune vif
-    cabinColor: 0xfff0a0,    // habitacle
+    bodyColor: 0xf0c020,     // carrosserie jaune vif (pick-up façon XIII)
+    cabinColor: 0x5a8fd0,    // vitres bleu soutenu
+    chromeColor: 0xcccccc,   // calandre / pare-chocs
+    headlightColor: 0xfff8c0, // phares
+    driverEye: 1.5,          // hauteur des yeux du conducteur en FPV (m)
+    driverForward: 0.35,     // décalage vers l'avant du poste de conduite (m)
     wheelRadius: 0.35,
     radius: 1.3,             // rayon de collision de la voiture
     maxSpeed: 14,            // m/s en avant

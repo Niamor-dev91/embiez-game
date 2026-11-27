@@ -16,7 +16,8 @@ export class PlayerCamera {
     this.camera = camera;
     this.player = player;
     this.ground = ground; // sol solide (terrain + pontons)
-    this.target = player.group; // cible suivie : joueur, ou voiturette (Game switch)
+    this.target = player.group; // cible suivie : joueur, ou véhicule (Game switch)
+    this.driverView = false;    // true = FPV au poste de conduite (voiture)
     this.yaw = 0;
     this.pitch = 0.35;
     this.enabled = true;
@@ -64,6 +65,20 @@ export class PlayerCamera {
       const p = this.player.group.position;
       this.camera.position.set(p.x, p.y + c.eyeHeight, p.z);
       this.camera.rotation.set(this.pitch, this.yaw, 0); // ordre YXZ (initCamera)
+      return;
+    }
+
+    if (this.driverView) {
+      // --- FPV conducteur : caméra au poste de conduite de la voiture ---
+      const v = CONFIG.vehicle;
+      const t = this.target;
+      const yaw = t.rotation.y;
+      this.camera.position.set(
+        t.position.x + Math.sin(yaw) * v.driverForward,
+        t.position.y + v.driverEye,
+        t.position.z + Math.cos(yaw) * v.driverForward
+      );
+      this.camera.rotation.set(this.pitch, this.yaw, 0);
       return;
     }
 
