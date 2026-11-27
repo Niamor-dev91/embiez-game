@@ -298,6 +298,8 @@ export class Game {
     const px = p.x + Math.cos(yaw) * off;
     const pz = p.z - Math.sin(yaw) * off;
     this.player.group.position.set(px, this.ground.heightAt(px, pz), pz);
+    this.player.group.visible = false; // retour en FPS : le perso est caché
+    this.player.group.scale.y = 1;
   }
 
   // --- Restart complet après un KO (touche R) : le monde est remis à zéro ---
@@ -573,10 +575,21 @@ export class Game {
   update(delta) {
     this.updateDayNight(delta);
     this.sea.update(delta);
-    // En véhicule, la position du joueur suit le véhicule : l'hélico et les
-    // policiers poursuivent la voiture, pas le point où on est monté
     if (this.vehicle) {
       this.player.group.position.set(this.vehicle.pos.x, this.vehicle.pos.y, this.vehicle.pos.z);
+      // Sur le jetski on voit le joueur assis sur la selle ; ailleurs il reste caché (FPS)
+      const onJetski = this.vehicle.type === 'jetski';
+      this.player.group.visible = onJetski;
+      if (onJetski) {
+        const vyaw = this.vehicle.group.rotation.y;
+        this.player.group.position.x += Math.sin(vyaw) * -0.25; // assis derrière le guidon
+        this.player.group.position.z += Math.cos(vyaw) * -0.25;
+        this.player.group.position.y += 0.62;                  // hauteur de la selle
+        this.player.group.rotation.y = vyaw;
+        this.player.group.scale.y = 0.72;                      // posture assise
+      } else {
+        this.player.group.scale.y = 1;
+      }
     }
     for (const npc of this.npcs) npc.update(delta, this.player);
     this.client.update(delta, this.player);

@@ -148,22 +148,28 @@ export const CONFIG = {
   // --- Bateaux du port (voilier, moteur, jetski) ---
   boat: {
     types: ['voilier', 'moteur', 'jetski'],
-    maxSpeed: 8,             // m/s en avant
-    maxReverseSpeed: 3,      // m/s en marche arrière
-    acceleration: 5,
-    brake: 8,
-    friction: 2,
-    turnSpeed: 1.6,          // rad/s
-    interactDistance: 3.5,   // distance max pour monter avec E
-    cameraDistance: 9,
+
+    maxSpeed: { voilier: 10, moteur: 15, jetski: 24 },       // m/s en avant (jetski > moteur > voilier)
+    maxReverseSpeed: { voilier: 2.5, moteur: 4, jetski: 6 }, // m/s en marche arrière
+    acceleration: 6,
+    brake: 10,
+    friction: 2.5,
+    turnSpeed: { voilier: 1.0, moteur: 1.7, jetski: 2.6 },    // rad/s (jetski très maniable)
+    interactDistance: { voilier: 5, moteur: 4.5, jetski: 3 }, // distance max pour monter avec E
+    cameraDistance: { voilier: 15, moteur: 12, jetski: 7 },  // caméra 3e personne
     floatHeight: 0.35,       // hauteur de flottaison (le bateau ne coule pas)
-    radius: { voilier: 2.5, moteur: 1.6, jetski: 1.1 }, // rayons de collision
+    radius: { voilier: 4.2, moteur: 3.2, jetski: 1.3 }, // rayons de collision
     colors: {
-      coque: 0xffffff,
+      coque: 0xf5f2ea,       // coque du voilier (blanc cassé)
+      pont: 0xb08a5e,        // pont en bois
+      coqueMoteur: 0xf2f4f6, // coque du bateau à moteur (blanc)
+      lisere: 0x1f6fb8,      // liseré bleu
+      verre: 0x9fc8e8,       // vitres (bleu gris)
+      jetski: 0xe83a2a,      // coque du jetski (rouge vif)
+      selle: 0x26262c,       // selle / sièges (noir)
+      noir: 0x1c1c22,
       voile: 0xfff8e0,
-      coqueMoteur: 0x2fa8e8,
-      jetski: 0xf08020,
-      mat: 0x8a6a4a,
+      mat: 0x8a6a4a,         // mât en bois
     },
   },
 

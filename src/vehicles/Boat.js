@@ -5,9 +5,10 @@ import { Input } from '../utils/Input.js';
 import { addOutline } from '../utils/Outline.js';
 import osmData from '../world/data/embiez-osm.js';
 
-// Bateau utilisable au port : voilier, bateau à moteur ou jetski (type).
+// Bateaux utilisables au port : voilier, bateau à moteur ou jetski (type).
 // Conduite sur l'eau (ZQSD comme la voiture) ; le bateau s'ARRÊTE au
 // contact de la terre ou d'un ponton (ground.heightAt >= 0 bloque).
+// Sur le jetski le joueur est visible, assis sur la selle (voir Game.js).
 
 // Cherche le point d'eau (heightAt < -0.5) le plus proche de (x, z)
 function findWaterNear(x, z, ground) {
@@ -66,6 +67,14 @@ export class Boat {
     return CONFIG.boat.radius[this.type];
   }
 
+  get interactDistance() {
+    return CONFIG.boat.interactDistance[this.type];
+  }
+
+  get cameraDistance() {
+    return CONFIG.boat.cameraDistance[this.type];
+  }
+
   get label() {
     return { voilier: 'le voilier', moteur: 'le bateau à moteur', jetski: 'le jetski' }[this.type];
   }
@@ -73,40 +82,127 @@ export class Boat {
   createMesh() {
     const c = CONFIG.boat.colors;
     const mat = (color) => new THREE.MeshLambertMaterial({ color });
-    const t = this.type;
 
     // Coque dans un sous-groupe avec outline toon
     this.hull = new THREE.Group();
     this.group.add(this.hull);
 
-    if (t === 'voilier') {
-      // coque allongée + mât + voile (cône aplati)
-      const coque = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.5, 4.2), mat(c.coque));
-      coque.position.y = 0.25;
-      const mat2 = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 3.2, 6), mat(c.mat));
-      mat2.position.set(0, 1.8, 0.3);
-      const voile = new THREE.Mesh(new THREE.ConeGeometry(1.3, 2.6, 4), mat(c.voile));
-      voile.scale.x = 0.18;
-      voile.position.set(0.15, 2.0, 0.3);
-      voile.rotation.z = 0.15;
-      this.hull.add(coque, mat2, voile);
-    } else if (t === 'moteur') {
-      const coque = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.5, 3.2), mat(c.coqueMoteur));
-      coque.position.y = 0.25;
-      const cabine = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.6, 1.4), mat(c.coque));
-      cabine.position.set(0, 0.8, -0.3);
-      this.hull.add(coque, cabine);
-    } else {
-      // jetski : coque basse + guidon
-      const coque = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.35, 2.2), mat(c.jetski));
-      coque.position.y = 0.18;
-      const guidon = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.08, 0.08), mat(0x222222));
-      guidon.position.set(0, 0.55, 0.6);
-      const mat2 = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.35, 6), mat(0x222222));
-      mat2.position.set(0, 0.4, 0.6);
-      this.hull.add(coque, guidon, mat2);
-    }
-    addOutline(this.hull, 1.08, CONFIG.props.outlineColor);
+    if (this.type === 'voilier') this.buildSailboat(mat, c);
+    else if (this.type === 'moteur') this.buildMotorboat(mat, c);
+    else this.buildJetski(mat, c);
+
+    addOutline(this.hull, 1.06, CONFIG.props.outlineColor);
+  }
+
+  // Voilier ~8 m de long : coque blanche, étrave relevée, pont en bois,
+  // roof de cockpit, grand mât et voile triangulaire
+  buildSailboat(mat, c) {
+    const coque = new THREE.Mesh(new THREE.BoxGeometry(2.4, 1.1, 8.0), mat(c.coque));
+    coque.position.y = 0.55;
+    const etrave = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.8, 1.6), mat(c.coque));
+    etrave.position.set(0, 0.95, 4.4);
+    etrave.rotation.x = -0.5;
+    const pont = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.12, 7.6), mat(c.pont));
+    pont.position.y = 1.12;
+    const lisere = new THREE.Mesh(new THREE.BoxGeometry(2.44, 0.16, 8.0), mat(c.lisere));
+    lisere.position.y = 0.95;
+    // roof du cockpit à l'arrière
+    const roof = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.7, 1.6), mat(c.coque));
+    roof.position.set(0, 1.5, -2.6);
+    const toitRoof = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.1, 1.8), mat(c.pont));
+    toitRoof.position.set(0, 1.9, -2.6);
+    // mât (7 m de haut)
+    const matM = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.13, 7.0, 8), mat(c.mat));
+    matM.position.set(0, 4.6, 1.2);
+    // voile triangulaire (forme extrudée mince) derrière le mât
+    const s = new THREE.Shape();
+    s.moveTo(0, 0); s.lineTo(0, 5.6); s.lineTo(3.4, 0); s.closePath();
+    const voile = new THREE.Mesh(new THREE.ExtrudeGeometry(s, { depth: 0.08, bevelEnabled: false }), mat(c.voile));
+    voile.position.set(0.12, 1.4, 1.0);
+    // bôme (barre horizontale en bas de la voile)
+    const bome = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 3.6, 6), mat(c.mat));
+    bome.rotation.x = Math.PI / 2;
+    bome.position.set(1.8, 1.45, 1.0);
+    // gouvernail à l'arrière
+    const gouvernail = new THREE.Mesh(new THREE.BoxGeometry(0.12, 1.0, 0.7), mat(c.pont));
+    gouvernail.position.set(0, 0.4, -4.1);
+    this.hull.add(coque, etrave, pont, lisere, roof, toitRoof, matM, voile, bome, gouvernail);
+  }
+
+  // Bateau à moteur ~6 m : coque blanche + liseré bleu, cabine vitrée,
+  // pare-brise, 2 sièges et 2 moteurs hors-bord à l'arrière
+  buildMotorboat(mat, c) {
+    const coque = new THREE.Mesh(new THREE.BoxGeometry(2.2, 1.0, 6.0), mat(c.coqueMoteur));
+    coque.position.y = 0.5;
+    const etrave = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.7, 1.2), mat(c.coqueMoteur));
+    etrave.position.set(0, 0.75, 3.4);
+    etrave.rotation.x = -0.45;
+    const lisere = new THREE.Mesh(new THREE.BoxGeometry(2.24, 0.16, 6.0), mat(c.lisere));
+    lisere.position.y = 0.85;
+    const pont = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.1, 5.4), mat(c.pont));
+    pont.position.y = 1.02;
+    // cabine + vitres (avant et côtés)
+    const cabine = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.85, 2.4), mat(c.coqueMoteur));
+    cabine.position.set(0, 1.5, 0.6);
+    const vitreAvant = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.5, 0.06), mat(c.verre));
+    vitreAvant.position.set(0, 1.55, 1.83);
+    const vitreG = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.5, 2.0), mat(c.verre));
+    vitreG.position.set(-0.86, 1.55, 0.6);
+    const vitreD = vitreG.clone();
+    vitreD.position.x = 0.86;
+    const toit = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.1, 2.6), mat(c.lisere));
+    toit.position.set(0, 1.97, 0.6);
+    // pare-brise incliné devant la cabine
+    const pareBrise = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.55, 0.06), mat(c.verre));
+    pareBrise.position.set(0, 1.45, 1.95);
+    pareBrise.rotation.x = -0.35;
+    // 2 sièges à l'arrière
+    const siegeG = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.5, 0.6), mat(c.selle));
+    siegeG.position.set(-0.5, 1.25, -1.6);
+    const siegeD = siegeG.clone();
+    siegeD.position.x = 0.5;
+    // 2 moteurs hors-bord noirs à l'arrière
+    const m1 = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.22, 0.9, 8), mat(c.noir));
+    m1.position.set(-0.6, 0.6, -3.1);
+    const m2 = m1.clone();
+    m2.position.x = 0.6;
+    const emb1 = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.3, 0.5), mat(c.noir));
+    emb1.position.set(-0.6, 1.05, -3.1);
+    const emb2 = emb1.clone();
+    emb2.position.x = 0.6;
+    this.hull.add(coque, etrave, lisere, pont, cabine, vitreAvant, vitreG, vitreD, toit, pareBrise, siegeG, siegeD, m1, m2, emb1, emb2);
+  }
+
+  // Jetski ~2,6 m : coque profilée rouge vif, nez relevu, selle noire,
+  // guidon avec poignées et petit pare-brise
+  buildJetski(mat, c) {
+    const coque = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.45, 2.6), mat(c.jetski));
+    coque.position.y = 0.22;
+    const nez = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.35, 0.8), mat(c.jetski));
+    nez.position.set(0, 0.38, 1.5);
+    nez.rotation.x = -0.4;
+    // plage arrière (repose-pieds)
+    const plage = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.08, 0.7), mat(c.noir));
+    plage.position.set(0, 0.48, -1.0);
+    // selle (le joueur s'assoit dessus, voir Game.js)
+    const selle = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.16, 1.2), mat(c.selle));
+    selle.position.set(0, 0.55, -0.25);
+    // colonne + guidon + poignées
+    const colonne = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.45, 6), mat(c.noir));
+    colonne.position.set(0, 0.7, 0.75);
+    const guidon = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.8, 6), mat(c.noir));
+    guidon.rotation.z = Math.PI / 2;
+    guidon.position.set(0, 0.92, 0.75);
+    const pG = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.14, 6), mat(c.selle));
+    pG.rotation.z = Math.PI / 2;
+    pG.position.set(-0.44, 0.92, 0.75);
+    const pD = pG.clone();
+    pD.position.x = 0.44;
+    // petit pare-brise devant le guidon
+    const pb = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.25, 0.04), mat(c.verre));
+    pb.position.set(0, 0.78, 1.05);
+    pb.rotation.x = -0.3;
+    this.hull.add(coque, nez, plage, selle, colonne, guidon, pG, pD, pb);
   }
 
   // Remis à son amarrage de départ (restart après un KO)
@@ -118,6 +214,9 @@ export class Boat {
 
   update(delta, alive = true) {
     const v = CONFIG.boat;
+    const maxF = v.maxSpeed[this.type];
+    const maxR = v.maxReverseSpeed[this.type];
+    const turn = v.turnSpeed[this.type];
 
     // --- Accélération / frein (comme la voiture) ; joueur KO = plus de conduite ---
     let throttle = 0;
@@ -126,14 +225,14 @@ export class Boat {
     if (throttle > 0) this.speed += v.acceleration * delta;
     else if (throttle < 0) this.speed -= v.brake * delta;
     else this.speed -= Math.sign(this.speed) * Math.min(Math.abs(this.speed), v.friction * delta);
-    this.speed = Math.max(-v.maxReverseSpeed, Math.min(v.maxSpeed, this.speed));
+    this.speed = Math.max(-maxR, Math.min(maxF, this.speed));
 
     // --- Direction ---
     let steer = 0;
     if (alive && Input.isDown('KeyA')) steer += 1;
     if (alive && Input.isDown('KeyD')) steer -= 1;
     const roll = Math.min(1, Math.abs(this.speed) / 2) * Math.sign(this.speed || 1);
-    this.group.rotation.y += steer * v.turnSpeed * delta * roll;
+    this.group.rotation.y += steer * turn * delta * roll;
 
     // --- Déplacement, bloqué au contact de la terre/pontons ---
     const yaw = this.group.rotation.y;
