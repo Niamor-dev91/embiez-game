@@ -243,7 +243,9 @@ src/world/, src/player/, src/vehicles/, src/npc/, src/utils/
   pare-chocs, 4 grosses roues qui tournent), outline toon, couleurs vives
   vehicle.*Color ; setCabinVisible(false) cache cabine+portes en FPV conducteur
 - En voiture (E) : vue FPV au poste de conduite (PlayerCamera.driverView,
-  caméra à vehicle.driverEye + driverForward, toit/cabine/portes cachés),
+  caméra à vehicle.driverEye (2.5 m, 1 m au-dessus du siège) + driverForward,
+  toit/cabine/portes cachés) + VOLANT (car.steering, hors cabinTop donc visible
+  en FPV) qui tourne avec la direction (steerVis lissé dans Car.update),
   la souris fait tourner la caméra indépendamment de la voiture ; bateaux
   restent en 3e personne,
   conduite arcade (W accélère, S frein/marche arrière, A/D tourne seulement

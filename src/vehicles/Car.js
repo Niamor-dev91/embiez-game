@@ -109,6 +109,21 @@ export class Car {
       this.group.add(w);
       this.wheels.push(w);
     }
+
+    // Volant au poste de conduite (hors cabinTop : reste visible en FPV).
+    // Il tourne avec la direction (voir update : steering.rotation.z).
+    this.steering = new THREE.Group();
+    const steerMat = new THREE.MeshLambertMaterial({ color: 0x1c1c22 });
+    const rim = new THREE.Mesh(new THREE.TorusGeometry(0.19, 0.032, 8, 20), steerMat);
+    rim.rotation.x = Math.PI / 2 - 0.4; // penché vers le conducteur
+    const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.09, 8), steerMat);
+    const column = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.42, 8), steerMat);
+    column.position.set(0, -0.16, -0.12);
+    column.rotation.x = 0.4;
+    this.steering.add(rim, hub, column);
+    this.steering.position.set(0, 1.05, 0.45);
+    addOutline(this.steering, 1.08, CONFIG.props.outlineColor);
+    this.group.add(this.steering);
   }
 
   // En vue conducteur FPV, on cache toit + cabine + portes (on voit par le pare-brise)
@@ -145,6 +160,7 @@ export class Car {
       this.waterTime = 0;
     }
 
+    let steer = 0; // direction demandée (aussi utilisée pour le volant visuel)
     if (!this.broken && alive) { // joueur KO = plus de conduite possible
       // --- Accélération / frein ---
       let throttle = 0;
@@ -156,7 +172,6 @@ export class Car {
       this.speed = Math.max(-v.maxReverseSpeed, Math.min(v.maxSpeed, this.speed));
 
       // --- Direction : on ne tourne que si la voiture roule ---
-      let steer = 0;
       if (Input.isDown('KeyA')) steer += 1;
       if (Input.isDown('KeyD')) steer -= 1;
       const roll = Math.min(1, Math.abs(this.speed) / 3) * Math.sign(this.speed || 1);
@@ -169,6 +184,10 @@ export class Car {
     } else {
       this.speed = 0; // en panne ou joueur KO : la voiture ne roule plus
     }
+
+    // --- Le volant visuel tourne avec la direction demandée ---
+    this.steerVis = (this.steerVis || 0) + (steer - (this.steerVis || 0)) * Math.min(1, 10 * delta);
+    if (this.steering) this.steering.rotation.z = -this.steerVis * 0.9;
 
     // --- Limites du monde + collisions bâtiments ---
     const half = this.ground.size / 2 - 2;
