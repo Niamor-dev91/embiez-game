@@ -488,6 +488,18 @@ export class Game {
     }
   }
 
+  // --- Téléportation de test (console F12 : __game.tp(x, z) / __game.tpHeli()) ---
+  tp(x, z) {
+    if (this.vehicle) this.exitVehicle();
+    this.player.vy = 0;
+    this.player.group.position.set(x, Math.max(this.ground.heightAt(x, z), 0), z);
+  }
+
+  tpHeli() { // pop à côté de l'hélicoptère civil (test)
+    const h = this.heliVehicle.pos;
+    this.tp(h.x + 4, h.z);
+  }
+
   // --- Cycle jour/nuit : 12 min de soleil puis 12 min de lune ---
   updateDayNight(delta) {
     const d = CONFIG.dayNight;
