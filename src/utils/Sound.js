@@ -28,6 +28,7 @@ export class Sound {
     const unlock = () => this.resume();
     window.addEventListener('pointerdown', unlock);
     window.addEventListener('keydown', unlock);
+    window.addEventListener('touchstart', unlock, { passive: true }); // mobile : le 1er tap débloque aussi l'AudioContext
     this.initMusic(); // musique de fond (fichier libre de droits)
   }
 
@@ -43,6 +44,7 @@ export class Sound {
     const start = () => { if (started) return; started = true; this.music.play().catch(() => {}); };
     window.addEventListener('pointerdown', start, { once: true });
     window.addEventListener('keydown', start, { once: true });
+    window.addEventListener('touchstart', start, { once: true, passive: true }); // mobile : la musique démarre au 1er tap
   }
 
   resume() {
