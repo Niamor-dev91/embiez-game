@@ -40,11 +40,13 @@ export class Sound {
     this.music = new Audio(base + this.cfg.musicFile);
     this.music.loop = true;
     this.music.volume = this.cfg.musicVolume;
+    this.musicMuted = false; // état du bouton musique (bulle haut-parleur)
     let started = false;
     const start = () => { if (started) return; started = true; this.music.play().catch(() => {}); };
     window.addEventListener('pointerdown', start, { once: true });
     window.addEventListener('keydown', start, { once: true });
     window.addEventListener('touchstart', start, { once: true, passive: true }); // mobile : la musique démarre au 1er tap
+    this.updateMusicButton();
   }
 
   resume() {
@@ -203,5 +205,25 @@ export class Sound {
     this.heli = null;
     h.g.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.3);
     setTimeout(() => { try { h.noise.stop(); h.o.stop(); h.lfo.stop(); } catch (_) { /* déjà stoppé */ } }, 400);
+  }
+
+  // Bouton musique (bulle haut-parleur #btn-music) : active / coupe la musique.
+  // Le clic/tap sur le bouton débloque aussi l'AudioContext (utile sur mobile).
+  toggleMusic() {
+    if (!this.music) return;
+    this.resume();
+    if (this.musicMuted || this.music.paused) {
+      this.musicMuted = false;
+      this.music.play().catch(() => {});
+    } else {
+      this.musicMuted = true;
+      this.music.pause();
+    }
+    this.updateMusicButton();
+  }
+
+  updateMusicButton() {
+    const b = typeof document !== 'undefined' && document.getElementById('btn-music');
+    if (b) b.textContent = this.musicMuted ? '🔇' : '🔊';
   }
 }
