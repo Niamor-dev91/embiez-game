@@ -203,6 +203,7 @@ export const CONFIG = {
     policeRange: 25,         // portée de tir du policier (m)
     policeHitChance: 0.7,    // probabilité de toucher par balle
     policeFireInterval: 1.2, // secondes entre deux tirs du policier
+    wantedDuration: 120,   // durée MAX de la recherche (s) : après 2 min sans toucher de PNJ, la police abandonne
     fleeSpeed: 5,            // vitesse de fuite d'un PNJ touché (m/s)
     fleeDistance: 50,        // distance à partir de laquelle le PNJ se calme (m)
     gunColor: 0x222222,

@@ -319,6 +319,7 @@ export class Game {
     // Hélicoptère de police : inactif au départ, appelé quand le joueur est
     // recherché (il a tiré sur un PNJ)
     this.wanted = false;
+    this.wantedTimer = 0; // compte à rebours de la recherche (s)
     this.heli = new PoliceHelicopter(this.scene, this.ground);
     this.heli.sound = this.sound; // rafales de l'hélicoptère
   }
@@ -387,7 +388,8 @@ export class Game {
     if (this.vehicle) this.exitVehicle();
     this.player.respawn();   // retour au spawn, PV max
     this.revolver.reset();   // chargeur plein + stock de balles max
-    this.wanted = false;     // recherche levée
+    this.wanted = false;
+    this.wantedTimer = 0; // recherche levée au restart
     this.heli.despawn();
     // PNJ recréés aux positions initiales (mêmes seeds -> mêmes chemins)
     for (const n of this.npcs) this.scene.remove(n.group);
@@ -873,6 +875,16 @@ export class Game {
     for (const npc of this.npcs) npc.update(delta, this.player);
     this.client.update(delta, this.player);
     if (this.shop) this.shop.keeper.update(delta, this.player);
+    // Recherche limitée dans le temps : au bout de wantedDuration, la police abandonne
+    if (this.wanted) {
+      this.wantedTimer -= delta;
+      if (this.wantedTimer <= 0) {
+        this.wanted = false;
+        this.heli.despawn();
+        this.notice = 'La police a levé les recherches.';
+        this.noticeTimer = 4;
+      }
+    }
     this.heli.update(delta, this.player, this.wanted);
     // Son continu : rotor d'hélicoptère (même son que la police). Piloté par le
     // joueur = plein volume ; hélicoptère de police actif = volume selon la distance.
@@ -908,6 +920,7 @@ export class Game {
             // -> l'hélicoptère de police intervient
             for (const n of this.npcs) if (n.isPolice) n.alerted = true;
             this.wanted = true;
+            this.wantedTimer = CONFIG.combat.wantedDuration; // la recherche dure 2 min max
           }
         }
       }
@@ -1105,7 +1118,7 @@ export class Game {
       txt = 'PV : ' + this.player.hp + '/' + CONFIG.combat.playerHp
         + (this.player.armor > 0 ? ' 🛡' + this.player.armor : '')
         + '   |   💰 ' + this.player.money + ' €   |   ' + ammoTxt + '   |   clic ou F = tirer';
-      if (this.wanted) txt += '   |   ⚠ RECHERCHÉ';
+      if (this.wanted) txt += '   |   ⚠ RECHERCHÉ ' + Math.ceil(this.wantedTimer) + ' s';
       if (this.heli.state === 'active') txt += '   |   hélico ' + this.heli.hp + '/' + this.heli.maxHp + ' PV';
       if (this.mission.active) txt += '   |   🍾 MISSION pastis : ' + Math.ceil(this.mission.timeLeft) + ' s';
       if (this.missionHeli && this.missionHeli.active) txt += '   |   🚁 MISSION pastis (île) : ' + Math.ceil(this.missionHeli.timeLeft) + ' s';
