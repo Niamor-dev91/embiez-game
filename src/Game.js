@@ -1083,7 +1083,8 @@ export class Game {
     const cosY = Math.cos(h.yaw), sinY = Math.sin(h.yaw);
     const lx = dx * cosY - dz * sinY; // position dans le repère local de la maison
     const lz = dx * sinY + dz * cosY;
-    return Math.abs(lx) < h.w / 2 && Math.abs(lz) < h.d / 2;
+    // marge de 0,8 m : couvre le seuil de la porte et l'épaisseur des murs
+    return Math.abs(lx) < h.w / 2 + 0.8 && Math.abs(lz) < h.d / 2 + 0.8; // marge 0,8 m (seuil de porte, épaisseur des murs)
   }
 
   updateHud() {
@@ -1153,6 +1154,7 @@ export class Game {
     const heure = Math.floor(this.timeOfDay * 24);
     txt += '   |   ' + (this.isNight ? '☾' : '☀') + ' ' + heure + 'h';
     // Crédits de fin affichés quand on est dans sa maison achetée
+    if (!this.creditsEl) this.creditsEl = document.getElementById('credits'); // au cas où le DOM n'était pas prêt au constructeur
     if (this.creditsEl) this.creditsEl.style.display = this.playerInOwnedHouse() ? 'flex' : 'none';
     if (txt !== this.lastHud) {
       this.hud.textContent = txt;
