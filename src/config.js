@@ -163,6 +163,13 @@ export const CONFIG = {
   // --- Bateaux du port (voilier, moteur, jetski) ---
   boat: {
     types: ['voilier', 'moteur', 'jetski'],
+    dockCount: 6,            // places d'amarrage utilisées au port (3 bateaux de base + 3 voiliers colorés)
+    dockMinSpacing: 14,     // espacement min entre deux amarrages (m) : les bateaux ne se touchent pas
+    dockExtra: [             // 3 voiliers supplémentaires, coques BLANCHES, liserés vert / rouge / jaune
+      { type: 'voilier', lisere: 0x2fa84a },
+      { type: 'voilier', lisere: 0xd84a2a },
+      { type: 'voilier', lisere: 0xf0c020 },
+    ],
 
     maxSpeed: { voilier: 10, moteur: 15, jetski: 24 },       // m/s en avant (jetski > moteur > voilier)
     maxReverseSpeed: { voilier: 2.5, moteur: 4, jetski: 6 }, // m/s en marche arrière

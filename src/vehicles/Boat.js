@@ -119,6 +119,7 @@ export class Boat {
     this.scene = scene;
     this.ground = ground;
     this.type = dock.type; // 'voilier' | 'moteur' | 'jetski'
+    this.lisereColor = dock.lisere || CONFIG.boat.colors.lisere; // liseré overridable par amarrage (vert/rouge/jaune)
     this.speed = 0;
     this.group = new THREE.Group();
     this.createMesh();
@@ -150,7 +151,7 @@ export class Boat {
   }
 
   createMesh() {
-    const c = CONFIG.boat.colors;
+    const c = { ...CONFIG.boat.colors, lisere: this.lisereColor }; // c.lisere = liseré du bateau
     const mat = (color) => new THREE.MeshLambertMaterial({ color });
 
     // Coque dans un sous-groupe avec outline toon

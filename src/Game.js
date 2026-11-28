@@ -284,10 +284,31 @@ export class Game {
     );
 
     // Bateaux amarrés aux pontons du port (voilier, moteur, jetski)
-    const spots = dockSpots(CONFIG.boat.types.length, this.ground, s);
-    this.boats = CONFIG.boat.types.map((t, i) =>
-      new Boat(this.scene, this.ground, { ...spots[i], type: t })
-    );
+    const spots = dockSpots(CONFIG.boat.dockCount, this.ground, s);
+    const docks = CONFIG.boat.types.map((t, i) => ({ ...spots[i], type: t }));
+    for (const e of CONFIG.boat.dockExtra) { // 3 voiliers blancs à liseré vert/rouge/jaune sur les quais suivants
+      docks.push({ ...spots[docks.length], type: e.type, lisere: e.lisere });
+    }
+    this.boats = docks.map((d) => new Boat(this.scene, this.ground, d));
+    console.log('[Boats] ' + this.boats.length + ' bateaux amarrés : '
+      + this.boats.map((b) => b.type + (b.lisereColor !== CONFIG.boat.colors.lisere ? ' liseré #' + b.lisereColor.toString(16) : '')).join(', '));
+    // Espacer les bateaux trop proches (ex. jetski et voilier vert au même quai) :
+    // on écarte la paire l'une de l'autre, dans l'eau, pour que les coques ne se touchent pas
+    for (let i = 0; i < this.boats.length; i++) {
+      for (let j = 0; j < i; j++) {
+        const a = this.boats[i], b = this.boats[j];
+        let d = Math.hypot(a.pos.x - b.pos.x, a.pos.z - b.pos.z) || 1;
+        let tries = 0;
+        while (d < a.radius + b.radius + 4 && tries++ < 10) {
+          const nx = a.pos.x + ((a.pos.x - b.pos.x) / d) * 6;
+          const nz = a.pos.z + ((a.pos.z - b.pos.z) / d) * 6;
+          if (this.ground.heightAt(nx, nz) < -0.5) {
+            a.pos.x = nx; a.pos.z = nz; a.dock.x = nx; a.dock.z = nz; // dock mis à jour (reset)
+          } else break;
+          d = Math.hypot(a.pos.x - b.pos.x, a.pos.z - b.pos.z);
+        }
+      }
+    }
 
     // Hélicoptère civil pilotable, posé en haut d'une colline (ni trop proche
     // ni trop loin du spawn)
