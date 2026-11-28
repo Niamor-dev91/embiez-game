@@ -40,6 +40,7 @@ export class Game {
     this.gameOverEl = document.getElementById('gameover'); // overlay "GAME OVER" au KO
     this.compassNeedle = document.getElementById('compass-needle'); // boussole bas droite
     this.compassCap = document.getElementById('compass-cap');
+    this.creditsEl = document.getElementById('credits'); // crédits de fin (dans la maison achetée)
     this.sound = new Sound(); // sons procéduraux (WebAudio)
     this.fireCooldown = 0;
     this.lastHud = '';
@@ -1072,6 +1073,19 @@ export class Game {
   }
 
   // HUD : points de vie du joueur + infos (en haut à gauche)
+  // Le joueur est DANS sa maison achetée -> les crédits de fin s'affichent
+  playerInOwnedHouse() {
+    const hs = this.house;
+    if (!hs || !hs.owned) return false;
+    const h = hs.house;
+    const dx = this.player.group.position.x - h.cx;
+    const dz = this.player.group.position.z - h.cz;
+    const cosY = Math.cos(h.yaw), sinY = Math.sin(h.yaw);
+    const lx = dx * cosY - dz * sinY; // position dans le repère local de la maison
+    const lz = dx * sinY + dz * cosY;
+    return Math.abs(lx) < h.w / 2 && Math.abs(lz) < h.d / 2;
+  }
+
   updateHud() {
     this.updateCompass(); // la boussole tourne même si le texte HUD ne change pas
     let txt;
@@ -1138,6 +1152,8 @@ export class Game {
     // indicateur jour/nuit + heure
     const heure = Math.floor(this.timeOfDay * 24);
     txt += '   |   ' + (this.isNight ? '☾' : '☀') + ' ' + heure + 'h';
+    // Crédits de fin affichés quand on est dans sa maison achetée
+    if (this.creditsEl) this.creditsEl.style.display = this.playerInOwnedHouse() ? 'flex' : 'none';
     if (txt !== this.lastHud) {
       this.hud.textContent = txt;
       this.lastHud = txt;

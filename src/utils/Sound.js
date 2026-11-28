@@ -40,9 +40,9 @@ export class Sound {
     this.music = new Audio(base + this.cfg.musicFile);
     this.music.loop = true;
     this.music.volume = this.cfg.musicVolume;
-    this.musicMuted = false; // état du bouton musique (bulle haut-parleur)
+    this.musicMuted = true; // état initial : musique COUPÉE (🔇) — c'est le bouton qui la pilote
     let started = false;
-    const start = () => { if (started) return; started = true; this.music.play().catch(() => {}); };
+    const start = () => { if (started) return; started = true; if (!this.musicMuted) this.music.play().catch(() => {}); }; // 1er geste : ne joue que si la musique n'est pas coupée
     window.addEventListener('pointerdown', start, { once: true });
     window.addEventListener('keydown', start, { once: true });
     window.addEventListener('touchstart', start, { once: true, passive: true }); // mobile : la musique démarre au 1er tap
