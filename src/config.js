@@ -280,6 +280,13 @@ export const CONFIG = {
     ceilColor: 0xf2e3c2,   // plafond beige à l'intérieur (comme la boutique)
     neighborText: "Psst... on m'a dit qu'un hélicoptère de livraison de pastis est caché dans la forêt ! 🚁🍾",
   },
+  animals: {
+    count: 3,          // chevaux dans le champ
+    fieldMinDist: 250, // le champ est entre 250 et 700 m du spawn (au milieu de l'île)
+    fieldMaxDist: 700,
+    fieldRadius: 18,   // rayon du circuit en 8 (m)
+    speed: 2,          // vitesse de balade (m/s)
+  },
 
   // --- Boutique du port (grande maison avec porte + PNJ vendeur) ---
   shop: {

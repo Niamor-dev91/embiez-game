@@ -14,6 +14,7 @@ import { Npc, pickRoads, pickPoliceRoads, pickClientRoad, nearestRoadPoint, find
 import { Car } from './vehicles/Car.js';
 import { TrafficCar, pickTrafficRoads } from './vehicles/TrafficCar.js';
 import { Boat, dockSpots } from './vehicles/Boat.js';
+import { findField, Horse } from './world/Animals.js';
 
 import { PoliceHelicopter } from './vehicles/PoliceHelicopter.js';
 
@@ -238,6 +239,15 @@ export class Game {
     // Boutique du port : grande maison avec une porte + PNJ vendeur
     this.setupShop();
     this.setupHouse(); // maison achetable (icône verte) + PNJ voisin près du spawn
+    // 2-3 chevaux qui se baladent dans un champ au milieu de l'île (circuit en 8)
+    const field = findField(this.ground);
+    this.horses = [];
+    if (field) {
+      for (let i = 0; i < CONFIG.animals.count; i++) {
+        this.horses.push(new Horse(this.scene, this.ground, field, 9000 + i));
+      }
+      console.log('[Animals] champ à (' + field.x.toFixed(0) + ', ' + field.z.toFixed(0) + ') r=' + field.r + ' m | ' + this.horses.length + ' chevaux');
+    }
     this.player = new Player(this.scene, this.ground, colliders);
     this.player.group.visible = false; // FPS : le perso est caché, l'arme = view model revolver
     this.playerCamera = new PlayerCamera(this.canvas, this.camera, this.player, this.ground);
@@ -408,6 +418,7 @@ export class Game {
     this.car.reset();
     this.heliVehicle.reset();
     for (const b of this.boats) b.reset();
+    for (const h of this.horses) h.reset(); // chevaux remis au départ du circuit
     this.spawnClient();
     this.mission = { active: false, timeLeft: 0, done: false };
     this.spawnClientHeli();
@@ -855,6 +866,7 @@ export class Game {
   update(delta) {
     this.updateDayNight(delta);
     this.updateClouds(delta); // cycle de vie des nuages
+    for (const h of this.horses) h.update(delta); // chevaux dans le champ
     this.sea.update(delta);
     if (this.vehicle) {
       this.player.group.position.set(this.vehicle.pos.x, this.vehicle.pos.y, this.vehicle.pos.z);
