@@ -893,6 +893,7 @@ export class Game {
       if (this.wantedTimer <= 0) {
         this.wanted = false;
         this.heli.despawn();
+        for (const n of this.npcs) if (n.isPolice) n.alerted = false; // les policiers à pied arrêtent aussi de tirer
         this.notice = 'La police a levé les recherches.';
         this.noticeTimer = 4;
       }
