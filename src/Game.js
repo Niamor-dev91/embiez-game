@@ -236,6 +236,7 @@ export class Game {
 
     // Boutique du port : grande maison avec une porte + PNJ vendeur
     this.setupShop();
+    this.setupHouse(); // maison achetable (icône verte) + PNJ voisin près du spawn
     this.player = new Player(this.scene, this.ground, colliders);
     this.player.group.visible = false; // FPS : le perso est caché, l'arme = view model revolver
     this.playerCamera = new PlayerCamera(this.canvas, this.camera, this.player, this.ground);
@@ -407,6 +408,11 @@ export class Game {
     this.spawnClient();
     this.mission = { active: false, timeLeft: 0, done: false };
     this.spawnClientHeli();
+    // Maison reverrouillée (porte fermée) après un restart
+    if (this.house) {
+      this.house.owned = false;
+      if (this.colliders.indexOf(this.house.doorLock) < 0) this.colliders.push(this.house.doorLock);
+    }
     this.missionHeli = { active: false, timeLeft: 0, done: false };
     this.clientMarkerHeli.visible = false;
     this.clientMarker.visible = false;
@@ -511,7 +517,7 @@ export class Game {
     const keeper = new Npc(this.scene, this.ground, colliders, null, 555, false, s.keeperColors);
     keeper.group.position.set(house.cx, this.ground.heightAt(house.cx, house.cz), house.cz);
     keeper.state = 'wait';
-    this.shop = { house, door, keeper };
+    this.shop = { house, door, keeper, idx };
     console.log('[Shop] boutique : maison ' + w.toFixed(1) + 'x' + d.toFixed(1) + ' m à '
       + Math.hypot(house.cx - sp.x, house.cz - sp.z).toFixed(0) + ' m du spawn, '
       + walls.length + ' murs + porte, vendeur posé');
@@ -543,6 +549,142 @@ export class Game {
     this.player.armor = s.armor;
     this.notice = 'Gilet pare-balles acheté ! 🛡 ' + s.armor + ' (' + this.player.money + ' € restants)';
     this.noticeTimer = 4;
+  }
+
+  // --- Maison achetable près du spawn ---
+  // Petite maison (hors boutique) avec une icône "maison verte" devant :
+  // E près de l'icône = acheter (10 000 €) -> la porte s'ouvre, on peut rentrer.
+  // Un PNJ voisin immobile (E pour parler) donne un indice sur l'hélicoptère.
+  setupHouse() {
+    const h = CONFIG.house;
+    const sp = CONFIG.player.spawn;
+    const shopIdx = this.shop ? this.shop.idx : -1;
+    const idx = this.buildings.smallNear(sp.x, sp.z, h.minDistance, h.maxDistance, shopIdx, h.maxArea);
+    if (idx < 0) { this.house = null; console.log('[House] aucune petite maison près du spawn'); return; }
+    const house = this.buildings.colliders[idx];
+    const w = house.w, d = house.d;
+    const cosY = Math.cos(house.yaw), sinY = Math.sin(house.yaw);
+    const toWorld = (lx, lz) => ({
+      x: house.cx + lx * cosY + lz * sinY,
+      z: house.cz - lx * sinY + lz * cosY,
+    });
+    // Façade de la porte = la plus proche du spawn (comme la boutique)
+    const facades = [
+      { n: [0, 1], len: w, axis: 'x' },
+      { n: [0, -1], len: w, axis: 'x' },
+      { n: [1, 0], len: d, axis: 'z' },
+      { n: [-1, 0], len: d, axis: 'z' },
+    ];
+    let doorFace = facades[0], bd = Infinity;
+    for (const f of facades) {
+      const mid = f.axis === 'x' ? toWorld(0, f.n[1] * d / 2) : toWorld(f.n[0] * w / 2, 0);
+      const dist = Math.hypot(mid.x - sp.x, mid.z - sp.z);
+      if (dist < bd) { bd = dist; doorFace = f; }
+    }
+    // Trou dans le mur (comme la boutique), mais PORTE VERROUILLÉE tant que la
+    // maison n'est pas achetée : un collider "porte" bouche le trou
+    const colliders = this.colliders;
+    colliders.splice(colliders.indexOf(house), 1);
+    const t = h.wallThickness, dw = h.doorWidth, off = h.doorOffset;
+    const bOSM = this.buildings.list[idx];
+    const wallTopY = this.ground.heightAt(house.cx, house.cz) + (bOSM.height || 6);
+    for (const f of facades) {
+      const push = (lx, lz, alongLen) => {
+        const p = toWorld(lx, lz);
+        colliders.push(f.axis === 'x'
+          ? { cx: p.x, cz: p.z, w: alongLen, d: t, yaw: house.yaw, maxY: wallTopY }
+          : { cx: p.x, cz: p.z, w: t, d: alongLen, yaw: house.yaw, maxY: wallTopY });
+      };
+      if (f === doorFace) {
+        const segL = f.len / 2 + off - dw / 2;
+        const segR = f.len / 2 - off - dw / 2;
+        if (segL > 0.01) {
+          const cL = (-f.len / 2 + off - dw / 2) / 2;
+          if (f.axis === 'x') push(cL, f.n[1] * d / 2, segL); else push(f.n[0] * w / 2, cL, segL);
+        }
+        if (segR > 0.01) {
+          const cR = (off + dw / 2 + f.len / 2) / 2;
+          if (f.axis === 'x') push(cR, f.n[1] * d / 2, segR); else push(f.n[0] * w / 2, cR, segR);
+        }
+      } else if (f.axis === 'x') push(0, f.n[1] * d / 2, f.len);
+      else push(f.n[0] * w / 2, 0, f.len);
+    }
+    // Collider "porte fermée" dans le trou (retiré à l'achat -> on peut rentrer)
+    const dl = doorFace.axis === 'x' ? [off, doorFace.n[1] * d / 2] : [doorFace.n[0] * w / 2, off];
+    const dpw = toWorld(dl[0], dl[1]);
+    const doorLock = { cx: dpw.x, cz: dpw.z, w: dw, d: t, yaw: house.yaw, maxY: wallTopY };
+    if (doorFace.axis === 'z') { doorLock.w = t; doorLock.d = dw; }
+    colliders.push(doorLock);
+    // Porte visuelle (fermée) dans le trou
+    const door = new THREE.Mesh(
+      new THREE.BoxGeometry(dw, h.doorHeight, 0.12),
+      new THREE.MeshLambertMaterial({ color: h.doorColor })
+    );
+    door.position.set(dpw.x, this.ground.heightAt(dpw.x, dpw.z) + h.doorHeight / 2, dpw.z);
+    door.rotation.y = house.yaw + (doorFace.axis === 'z' ? Math.PI / 2 : 0);
+    addOutline(door, 1.06, CONFIG.props.outlineColor);
+    this.scene.add(door);
+    // Icône "maison verte" devant la façade (poteau + mini maison verte)
+    const icon = new THREE.Group();
+    const matIcon = new THREE.MeshLambertMaterial({ color: h.iconColor });
+    const matPole = new THREE.MeshLambertMaterial({ color: 0x8a8a8a });
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, h.iconHeight, 6), matPole);
+    pole.position.y = h.iconHeight / 2;
+    const iBody = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.4, 0.45), matIcon);
+    iBody.position.y = h.iconHeight + 0.2;
+    const iRoof = new THREE.Mesh(new THREE.ConeGeometry(0.45, 0.32, 4), matIcon);
+    iRoof.position.y = h.iconHeight + 0.56;
+    iRoof.rotation.y = Math.PI / 4;
+    icon.add(pole, iBody, iRoof);
+    const out = doorFace.axis === 'x'
+      ? toWorld(dl[0], dl[1] + doorFace.n[1] * 1.6)
+      : toWorld(dl[0] + doorFace.n[0] * 1.6, dl[1]);
+    icon.position.set(out.x, this.ground.heightAt(out.x, out.z), out.z);
+    addOutline(icon, 1.08, CONFIG.props.outlineColor);
+    this.scene.add(icon);
+    // Plafond beige à l'intérieur (comme la boutique)
+    const ceil = new THREE.Mesh(
+      new THREE.BoxGeometry(w - 0.4, 0.12, d - 0.4),
+      new THREE.MeshLambertMaterial({ color: h.ceilColor })
+    );
+    ceil.position.set(house.cx, wallTopY - 0.06, house.cz);
+    ceil.rotation.y = house.yaw;
+    this.scene.add(ceil);
+    // PNJ voisin immobile, à npcDistance de la maison, côté spawn
+    const nd = Math.hypot(sp.x - house.cx, sp.z - house.cz) || 1;
+    const nx = house.cx + (sp.x - house.cx) / nd * h.npcDistance;
+    const nz = house.cz + (sp.z - house.cz) / nd * h.npcDistance;
+    const neighbor = new Npc(this.scene, this.ground, this.colliders, null, 781, false);
+    neighbor.group.position.set(nx, this.ground.heightAt(nx, nz), nz);
+    neighbor.state = 'wait';
+    neighbor.sound = this.sound;
+    this.house = { idx, house, doorFace, doorLock, door, icon, neighbor, owned: false };
+    console.log('[House] maison achetable à (' + house.cx.toFixed(0) + ', ' + house.cz.toFixed(0) + ') | '
+      + Math.hypot(house.cx - sp.x, house.cz - sp.z).toFixed(0) + ' m du spawn | prix ' + h.price + ' €');
+  }
+
+  // Achat de la maison (E près de l'icône) : la porte s'ouvre (collider retiré)
+  buyHouse() {
+    const h = CONFIG.house;
+    const hs = this.house;
+    if (!hs) return;
+    if (hs.owned) {
+      this.notice = 'Maison déjà à toi ! 🏠';
+      this.noticeTimer = 3;
+      return;
+    }
+    if (this.player.money < h.price) {
+      this.notice = 'Pas assez d\'€ ! Maison : ' + h.price + ' € (tu as ' + this.player.money + ' €)';
+      this.noticeTimer = 4;
+      return;
+    }
+    this.player.money -= h.price;
+    hs.owned = true;
+    const i = this.colliders.indexOf(hs.doorLock);
+    if (i >= 0) this.colliders.splice(i, 1); // la porte s'ouvre : on peut rentrer
+    hs.door.rotation.y += 1.2; // la porte visuelle s'ouvre
+    this.notice = 'Maison achetée ! 🏠 ' + h.price + ' € — tu peux y entrer.';
+    this.noticeTimer = 5;
   }
 
   // --- Mission "Livraison de pastis" ---
@@ -794,16 +936,32 @@ export class Game {
           if (pd < CONFIG.shop.interactDistance) {
             this.buyArmor();
           } else {
-            let best = null;
-            let bd = Infinity;
-            for (const v of this.vehicles) {
-              const d = Math.hypot(
-                this.player.group.position.x - v.pos.x,
-                this.player.group.position.z - v.pos.z
-              );
-              if (d < bd) { bd = d; best = v; }
+            // Maison achetable : E près de l'icône = acheter ; près du voisin = parler
+            let handled = false;
+            if (this.house) {
+              const ip = this.house.icon.position;
+              const idd = Math.hypot(this.player.group.position.x - ip.x, this.player.group.position.z - ip.z);
+              const np = this.house.neighbor.group.position;
+              const ndd = Math.hypot(this.player.group.position.x - np.x, this.player.group.position.z - np.z);
+              if (idd < CONFIG.house.interactDistance) { this.buyHouse(); handled = true; }
+              else if (ndd < CONFIG.house.interactDistance) {
+                this.notice = CONFIG.house.neighborText;
+                this.noticeTimer = 6;
+                handled = true;
+              }
             }
-            if (best && bd < this.vehicleInteractDistance(best)) this.enterVehicle(best);
+            if (!handled) {
+              let best = null;
+              let bd = Infinity;
+              for (const v of this.vehicles) {
+                const d = Math.hypot(
+                  this.player.group.position.x - v.pos.x,
+                  this.player.group.position.z - v.pos.z
+                );
+                if (d < bd) { bd = d; best = v; }
+              }
+              if (best && bd < this.vehicleInteractDistance(best)) this.enterVehicle(best);
+            }
           }
         } else {
           this.exitVehicle();
@@ -960,6 +1118,18 @@ export class Game {
           const pd = Math.hypot(this.player.group.position.x - kp.x, this.player.group.position.z - kp.z);
           if (pd < CONFIG.shop.interactDistance) {
             txt += '   |   E : gilet pare-balles 🛡' + CONFIG.shop.armor + ' (' + CONFIG.shop.price + ' €)';
+          }
+        }
+        if (this.house) {
+          const ip = this.house.icon.position;
+          const idd = Math.hypot(this.player.group.position.x - ip.x, this.player.group.position.z - ip.z);
+          if (idd < CONFIG.house.interactDistance && !this.house.owned) {
+            txt += '   |   E : acheter la maison 🏠 (' + CONFIG.house.price + ' €)';
+          }
+          const np = this.house.neighbor.group.position;
+          const ndd = Math.hypot(this.player.group.position.x - np.x, this.player.group.position.z - np.z);
+          if (ndd < CONFIG.house.interactDistance) {
+            txt += '   |   E : parler au voisin 🗣';
           }
         }
       }

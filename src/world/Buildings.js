@@ -179,7 +179,6 @@ export class Buildings {
     }
     return best;
   }
-
   // Repeint le toit d'un bâtiment (index = index dans this.colliders)
   paintRoof(i, color) {
     this.roofs.setColorAt(i, new THREE.Color(color));
@@ -219,6 +218,24 @@ export class Buildings {
     if (best) {
       this.group.remove(best.mesh);
       this.rocks = this.rocks.filter((r) => r !== best);
+    }
+    return best;
+  }
+
+  // Petite maison entre minDist et maxDist du point (x, z), hors excludeIdx,
+  // de surface <= maxArea ; la plus proche du point gagne. Renvoie l'index.
+  smallNear(x, z, minDist, maxDist, excludeIdx, maxArea) {
+    let best = -1;
+    let bestScore = -1;
+    for (let i = 0; i < this.colliders.length; i++) {
+      if (i === excludeIdx) continue;
+      const c = this.colliders[i];
+      const d = Math.hypot(c.cx - x, c.cz - z);
+      if (d < minDist || d > maxDist) continue;
+      const area = c.w * c.d;
+      if (area > maxArea) continue;
+      const score = maxDist - d; // la plus proche
+      if (score > bestScore) { bestScore = score; best = i; }
     }
     return best;
   }

@@ -262,6 +262,23 @@ export const CONFIG = {
     markerHeight: 12,
     markerOpacity: 0.3,
   },
+  house: {
+    price: 10000,          // prix de la maison achetable (€)
+    minDistance: 25,       // petite maison entre 25 et 140 m du spawn (hors boutique)
+    maxDistance: 140,
+    maxArea: 800,          // "petite" maison : surface max (m²)
+    interactDistance: 4,   // E près de l'icône = acheter la maison ; près du voisin = parler
+    iconColor: 0x2fa84a,   // petite maison VERTE dessinée sur l'icône devant la maison
+    iconHeight: 1.7,       // hauteur de l'icône au-dessus du sol (m)
+    npcDistance: 8,        // le PNJ voisin est à ~8 m de la maison, côté spawn
+    doorWidth: 1.2,
+    doorHeight: 2.2,
+    wallThickness: 0.35,
+    doorColor: 0x6a4a2a,
+    doorOffset: 0,
+    ceilColor: 0xf2e3c2,   // plafond beige à l'intérieur (comme la boutique)
+    neighborText: "Psst... on m'a dit qu'un hélicoptère de livraison de pastis est caché dans la forêt ! 🚁🍾",
+  },
 
   // --- Boutique du port (grande maison avec porte + PNJ vendeur) ---
   shop: {
