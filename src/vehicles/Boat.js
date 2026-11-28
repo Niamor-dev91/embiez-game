@@ -43,6 +43,76 @@ export function dockSpots(count, ground, near) {
   return spots;
 }
 
+// Texture de pont en teck (lattes + calfatage noir) générée en canvas
+function teckTexture(baseHex) {
+  const cv = document.createElement('canvas');
+  cv.width = 256; cv.height = 256;
+  const ctx = cv.getContext('2d');
+  ctx.fillStyle = '#' + baseHex.toString(16).padStart(6, '0');
+  ctx.fillRect(0, 0, 256, 256);
+  // 8 lattes dans le sens de la longueur, alternance de teintes chaudes
+  const lat = 256 / 8;
+  for (let i = 0; i < 8; i++) {
+    ctx.fillStyle = i % 2 ? 'rgba(120, 85, 45, 0.35)' : 'rgba(220, 180, 130, 0.18)';
+    ctx.fillRect(0, i * lat, 256, lat);
+    ctx.fillStyle = 'rgba(30, 20, 10, 0.85)'; // calfatage
+    ctx.fillRect(0, i * lat, 256, 2);
+  }
+  const tex = new THREE.CanvasTexture(cv);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+// Texture de coque : blanc au-dessus, liseré bleu sous le liston,
+// antifouling bleu nuit sous la flottaison (axe u = tour de la section)
+function hullTexture(c) {
+  const cv = document.createElement('canvas');
+  cv.width = 256; cv.height = 128;
+  const ctx = cv.getContext('2d');
+  const hex = (n) => '#' + n.toString(16).padStart(6, '0');
+  ctx.fillStyle = hex(c.coque);
+  ctx.fillRect(0, 0, 256, 128);
+  ctx.fillStyle = hex(c.antifouling); // bas de coque (u autour de 0.5)
+  ctx.fillRect(256 * 0.32, 0, 256 * 0.36, 128);
+  ctx.fillStyle = hex(c.lisere); // liseré le long du pont (bords u)
+  ctx.fillRect(0, 0, 256 * 0.05, 128);
+  ctx.fillRect(256 * 0.95, 0, 256 * 0.05, 128);
+  const tex = new THREE.CanvasTexture(cv);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+// Construit une surface "loftée" : sections = liste de listes de Vector3
+// (même longueur), reliées en quads ; uvAt(i, j) donne l'UV de chaque sommet
+function loftGeometry(sections, uvAt) {
+  const pos = [], uvs = [], idx = [];
+  const K = sections[0].length;
+  for (const row of sections) for (const p of row) pos.push(p.x, p.y, p.z);
+  for (let i = 0; i < sections.length; i++)
+    for (let j = 0; j < K; j++) uvs.push(...uvAt(i, j));
+  for (let i = 0; i < sections.length - 1; i++)
+    for (let j = 0; j < K - 1; j++) {
+      const a = i * K + j, b = a + 1, c2 = a + K, d = c2 + 1;
+      idx.push(a, c2, b, b, c2, d);
+    }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+  g.setIndex(idx);
+  g.computeVertexNormals();
+  return g;
+}
+
+// Cylindre fin tendu entre deux points (hauban, rail de furling...)
+function stayBetween(a, b, r, material) {
+  const dir = new THREE.Vector3().subVectors(b, a);
+  const cyl = new THREE.Mesh(new THREE.CylinderGeometry(r, r, dir.length(), 6), material);
+  cyl.position.copy(a).addScaledVector(dir, 0.5);
+  cyl.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.clone().normalize());
+  return cyl;
+}
+
 export class Boat {
 
   constructor(scene, ground, dock) {
@@ -94,39 +164,155 @@ export class Boat {
     addOutline(this.hull, 1.06, CONFIG.props.outlineColor);
   }
 
-  // Voilier ~8 m de long : coque blanche, étrave relevée, pont en bois,
-  // roof de cockpit, grand mât et voile triangulaire
+  // Voilier ~8,4 m : monocoque de plaisance récent — coque blanche galbée
+  // (loft de sections), liseré bleu + antifouling bleu nuit, pont teck latté,
+  // roof avec hublots, cockpit teck avec barre à roue, mât alu, grande voile
+  // blanche, génois sur enrouleur, garde-corps et pavillon tricolore
   buildSailboat(mat, c) {
-    const coque = new THREE.Mesh(new THREE.BoxGeometry(2.4, 1.1, 8.0), mat(c.coque));
-    coque.position.y = 0.55;
-    const etrave = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.8, 1.6), mat(c.coque));
-    etrave.position.set(0, 0.95, 4.4);
-    etrave.rotation.x = -0.5;
-    const pont = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.12, 7.6), mat(c.pont));
-    pont.position.y = 1.12;
-    const lisere = new THREE.Mesh(new THREE.BoxGeometry(2.44, 0.16, 8.0), mat(c.lisere));
-    lisere.position.y = 0.95;
-    // roof du cockpit à l'arrière
-    const roof = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.7, 1.6), mat(c.coque));
-    roof.position.set(0, 1.5, -2.6);
-    const toitRoof = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.1, 1.8), mat(c.pont));
-    toitRoof.position.set(0, 1.9, -2.6);
-    // mât (7 m de haut)
-    const matM = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.13, 7.0, 8), mat(c.mat));
-    matM.position.set(0, 4.6, 1.2);
-    // voile triangulaire (forme extrudée mince) derrière le mât
-    const s = new THREE.Shape();
-    s.moveTo(0, 0); s.lineTo(0, 5.6); s.lineTo(3.4, 0); s.closePath();
-    const voile = new THREE.Mesh(new THREE.ExtrudeGeometry(s, { depth: 0.08, bevelEnabled: false }), mat(c.voile));
-    voile.position.set(0.12, 1.4, 1.0);
-    // bôme (barre horizontale en bas de la voile)
-    const bome = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 3.6, 6), mat(c.mat));
+    const halfL = 4.2; // demi-longueur de coque
+    // t : 0 à l'arrière (transom), 1 à la proue
+    const t = (z) => (z + halfL) / (2 * halfL);
+    // demi-largeur : max ~1,25 m aux 2/3 avant, transom 1,15 m, 0 à la proue
+    const halfW = (z) => {
+      const u = t(z);
+      if (u >= 0.85) return 1.25 * Math.cos(((u - 0.85) / 0.15) * Math.PI / 2);
+      return 1.15 + 0.1 * Math.sin(u * Math.PI);
+    };
+    // ligne de pont qui remonte vers la proue (sheer)
+    const yDeck = (z) => 1.02 + 0.25 * Math.pow(t(z), 2.2);
+    const depth = (z) => 0.8 + 0.35 * (1 - t(z)); // creux de coque (assez profond pour que le bas baigne)
+
+    // Matériaux texturés (générés en canvas, style toon conservé)
+    const teckTex = teckTexture(c.pont);
+    teckTex.repeat.set(1, 3);
+    const teckMat = new THREE.MeshLambertMaterial({ map: teckTex, side: THREE.DoubleSide });
+    const coqueMat = new THREE.MeshLambertMaterial({ map: hullTexture(c), side: THREE.DoubleSide });
+    const alu = mat(c.alu);
+
+    // --- Coque : sections en U (demi-ellipse) loftées de l'arrière à la proue
+    const N = 18, K = 13;
+    const hullSections = [];
+    for (let i = 0; i < N; i++) {
+      const z = -halfL + (2 * halfL * i) / (N - 1);
+      const w = halfW(z), d = depth(z), y0 = yDeck(z);
+      const row = [];
+      for (let j = 0; j < K; j++) {
+        const a = (j / (K - 1)) * Math.PI; // 0 = bordé tribord, PI = bordé bâbord
+        row.push(new THREE.Vector3(w * Math.cos(a), y0 - d * Math.sin(a), z));
+      }
+      hullSections.push(row);
+    }
+    const coque = new THREE.Mesh(loftGeometry(hullSections, (i, j) => [j / (K - 1), i / (N - 1)]), coqueMat);
+
+    // Transom arrière (face plate reprenant la section arrière)
+    const zs = -halfL + 0.02;
+    const wT = halfW(zs), yT = yDeck(zs), dT = depth(zs);
+    const shape = new THREE.Shape();
+    for (let j = 0; j < K; j++) {
+      const a = (j / (K - 1)) * Math.PI;
+      const x = wT * Math.cos(a), y = yT - dT * Math.sin(a);
+      if (j === 0) shape.moveTo(x, y); else shape.lineTo(x, y);
+    }
+    const transom = new THREE.Mesh(new THREE.ShapeGeometry(shape), coqueMat);
+    transom.position.z = zs;
+    transom.rotation.y = Math.PI;
+
+    // --- Pont teck légèrement bombé (cambrure)
+    const M = 9;
+    const deckSections = [];
+    for (let i = 0; i < N; i++) {
+      const z = -halfL + (2 * halfL * i) / (N - 1);
+      const w = halfW(z) * 0.995, y0 = yDeck(z);
+      const row = [];
+      for (let j = 0; j < M; j++) {
+        const xr = (j / (M - 1)) * 2 - 1;
+        row.push(new THREE.Vector3(xr * w, y0 + 0.06 * (1 - xr * xr), z));
+      }
+      deckSections.push(row);
+    }
+    const pont = new THREE.Mesh(loftGeometry(deckSections, (i, j) => [j / (M - 1), (i / (N - 1)) * 3]), teckMat);
+
+    // --- Roof (rouf) blanc, hublots latéraux, pare-brise incliné, atterrage
+    const yR = yDeck(0.6);
+    const roof = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.6, 2.8), mat(c.coque));
+    roof.position.set(0, yR + 0.28, 0.6);
+    for (const sgn of [-1, 1]) for (let k = -1; k <= 1; k++) {
+      const hub = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.16, 0.45), mat(c.verre));
+      hub.position.set(sgn * 0.86, yR + 0.35, 0.6 + k * 0.8);
+      this.hull.add(hub);
+    }
+    const pareBrise = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.35, 0.04), mat(c.verre));
+    pareBrise.position.set(0, yR + 0.55, 2.02);
+    pareBrise.rotation.x = -0.35;
+    const atterr = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.5, 0.05), mat(c.noir));
+    atterr.position.set(0, yR + 0.28, 0.6 - 1.42);
+    // 2 mains courantes teck sur le toit du roof
+    for (const sgn of [-1, 1]) {
+      const rail = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 1.8, 6), teckMat);
+      rail.rotation.x = Math.PI / 2;
+      rail.position.set(sgn * 0.55, yR + 0.61, 0.6);
+      this.hull.add(rail);
+    }
+
+    // --- Cockpit : 2 bancs teck, barre à roue sur pied
+    const yC = yDeck(-2.6);
+    for (const sgn of [-1, 1]) {
+      const banc = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.18, 2.0), teckMat);
+      banc.position.set(sgn * 0.5, yC + 0.13, -2.6);
+      this.hull.add(banc);
+    }
+    const pied = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.08, 0.75, 8), alu);
+    pied.position.set(0, yC + 0.37, -3.3);
+    const roue = new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.03, 6, 16), alu);
+    roue.position.set(0, yC + 0.82, -3.3);
+
+    // --- Gréement : mât alu, bôme, grande voile blanche à bordure incurvée
+    const zMat = 0.9;
+    const matM = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.1, 9.5, 8), alu);
+    matM.position.set(0, yDeck(zMat) + 4.7, zMat);
+    const bome = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 3.3, 6), alu);
     bome.rotation.x = Math.PI / 2;
-    bome.position.set(1.8, 1.45, 1.0);
-    // gouvernail à l'arrière
-    const gouvernail = new THREE.Mesh(new THREE.BoxGeometry(0.12, 1.0, 0.7), mat(c.pont));
-    gouvernail.position.set(0, 0.4, -4.1);
-    this.hull.add(coque, etrave, pont, lisere, roof, toitRoof, matM, voile, bome, gouvernail);
+    bome.position.set(0, 1.9, zMat - 1.6);
+    const s = new THREE.Shape();
+    s.moveTo(0, 0); s.lineTo(0, 7.0);
+    s.quadraticCurveTo(2.1, 3.4, 3.0, 0); // bord de chute incurvé
+    s.closePath();
+    const voileGeo = new THREE.ExtrudeGeometry(s, { depth: 0.06, bevelEnabled: false });
+    voileGeo.rotateY(Math.PI / 2); // voile dans le plan vertical avant-arrière
+    const voile = new THREE.Mesh(voileGeo, mat(c.voile));
+    voile.position.set(0.03, 1.9, zMat);
+    // génois enroulé sur l'étai (cylindre blanc du mât à la proue)
+    const tetMat = new THREE.Vector3(0, yDeck(zMat) + 9.4, zMat);
+    const tetProue = new THREE.Vector3(0, 1.35, halfL - 0.1);
+    const geno = stayBetween(tetMat, tetProue, 0.1, mat(c.voile));
+    // haubans + pataras
+    const haubanG = stayBetween(tetMat, new THREE.Vector3(-halfW(0.5) * 0.95, yDeck(0.5), 0.5), 0.02, alu);
+    const haubanD = stayBetween(tetMat, new THREE.Vector3(halfW(0.5) * 0.95, yDeck(0.5), 0.5), 0.02, alu);
+    const pataras = stayBetween(tetMat, new THREE.Vector3(0, yDeck(-4.0), -4.0), 0.02, alu);
+
+    // --- Garde-corps : 5 chandeliers + filin par bord
+    for (const sgn of [-1, 1]) {
+      let prev = null;
+      for (let z = 2.8; z >= -3.6; z -= 1.3) {
+        const x = sgn * (halfW(z) * 0.97 - 0.03);
+        const base = new THREE.Vector3(x, yDeck(z) + 0.05, z);
+        const top = new THREE.Vector3(x, yDeck(z) + 0.65, z);
+        const chan = stayBetween(base, top, 0.018, alu);
+        this.hull.add(chan);
+        if (prev) this.hull.add(stayBetween(prev, top, 0.015, alu));
+        prev = top;
+      }
+    }
+
+    // Pavillon tricolore à la poupe (bandes verticales, bleu côté mât)
+    const drapeauColors = [0x0055a4, 0xf5f2ea, 0xef4135];
+    drapeauColors.forEach((col, i) => {
+      const bande = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.38, 0.02), mat(col));
+      bande.position.set(0.02 - i * 0.18, 2.24, -3.95);
+      this.hull.add(bande);
+    });
+
+    this.hull.add(coque, transom, pont, roof, pareBrise, atterr, pied, roue, matM, bome, voile, geno, haubanG, haubanD, pataras);
   }
 
   // Bateau à moteur ~6 m : coque blanche + liseré bleu, cabine vitrée,

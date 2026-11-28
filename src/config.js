@@ -185,6 +185,8 @@ export const CONFIG = {
       noir: 0x1c1c22,
       voile: 0xfff8e0,
       mat: 0x8a6a4a,         // mât en bois
+      antifouling: 0x14355e, // bas de coque du voilier (bleu nuit)
+      alu: 0xc9d1d8,         // accastillage / mât alu du voilier
     },
   },
 

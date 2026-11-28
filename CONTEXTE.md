@@ -57,8 +57,9 @@ public/music/         musique de fond + CREDITS.txt (servie telle quelle par Vit
   joueur agresse un PNJ ; **2 voitures de trafic** ; collisions voiture/PNJ
 - **Voiturette pick-up XIII** (20 m/s, portes vitrées, FPV conducteur à 2,5 m avec volant
   qui tourne, caméra qui revient sur l'axe de la voiture, phares la nuit, panne après 3 s
-  dans l'eau) ; **3 bateaux** au port (voilier 10 / moteur 15 / jetski 24 m/s, modèles
-  détaillés, joueur visible assis sur le jetski)
+  dans l'eau) ; **3 bateaux** au port (voilier 10 / moteur 15 / jetski 24 m/s, joueur visible assis
+  sur le jetski) : voilier redessiné (coque loftée, pont teck texturé, antifouling bleu
+  nuit, mât alu + haubans), moteur cabine vitrée + 2 hors-bord, jetski rouge profilé
 - **Hélicoptère civil pilotable** posé en colline (Shift/Space = monter/descendre, plafond
   150 m) ; s'il est quitté en l'air il **tombe au sol** ; **hélicoptère de police** (15 PV,
   tir en orbite si recherché, tombe et brûle à 0 PV, projecteur la nuit)
