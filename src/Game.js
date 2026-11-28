@@ -10,7 +10,7 @@ import { Vegetation } from './world/Vegetation.js';
 import { Player } from './player/Player.js';
 import { PlayerCamera } from './player/PlayerCamera.js';
 import { Revolver } from './player/Revolver.js';
-import { Npc, pickRoads, pickPoliceRoads, pickClientRoad, nearestRoadPoint } from './npc/Npc.js';
+import { Npc, pickRoads, pickPoliceRoads, pickClientRoad, nearestRoadPoint, findSmallIsland } from './npc/Npc.js';
 import { Car } from './vehicles/Car.js';
 import { TrafficCar, pickTrafficRoads } from './vehicles/TrafficCar.js';
 import { Boat, dockSpots } from './vehicles/Boat.js';
@@ -300,6 +300,19 @@ export class Game {
     this.clientMarker.visible = false;
     this.scene.add(this.clientMarker);
     this.mission = { active: false, timeLeft: 0, done: false };
+    // Mission hélicoptère : PNJ client sur une petite île + cylindre turquoise
+    this.spawnClientHeli();
+    const mh = CONFIG.missionHeli;
+    this.clientMarkerHeli = new THREE.Mesh(
+      new THREE.CylinderGeometry(mh.markerRadius, mh.markerRadius, mh.markerHeight, 24, 1, true),
+      new THREE.MeshBasicMaterial({
+        color: mh.markerColor, transparent: true, opacity: mh.markerOpacity,
+        side: THREE.DoubleSide, depthWrite: false, fog: false,
+      })
+    );
+    this.clientMarkerHeli.visible = false;
+    this.scene.add(this.clientMarkerHeli);
+    this.missionHeli = { active: false, timeLeft: 0, done: false };
 
     // Hélicoptère de police : inactif au départ, appelé quand le joueur est
     // recherché (il a tiré sur un PNJ)
@@ -339,6 +352,7 @@ export class Game {
     // Prendre la voiturette déclenche la mission "Livraison de pastis"
     // (une seule fois par partie : mission.done)
     if (v === this.car && !this.mission.active && !this.mission.done) this.startMission();
+    if (v === this.heliVehicle && !this.missionHeli.active && !this.missionHeli.done) this.startMissionHeli(); // prendre l'hélico lance la mission île
     this.playerCamera.target = v.group;
     // En voiture : vue FPV au poste de conduite (cabine cachée) ; hélico/bateaux : 3e personne
     this.playerCamera.driverView = v === this.car || v.driverView === true;
@@ -392,6 +406,9 @@ export class Game {
     for (const b of this.boats) b.reset();
     this.spawnClient();
     this.mission = { active: false, timeLeft: 0, done: false };
+    this.spawnClientHeli();
+    this.missionHeli = { active: false, timeLeft: 0, done: false };
+    this.clientMarkerHeli.visible = false;
     this.clientMarker.visible = false;
     this.timeOfDay = 0.3; // retour au matin
     this.notice = '';
@@ -561,6 +578,60 @@ export class Game {
     } else if (this.mission.timeLeft <= 0) {
       this.mission.active = false;
       this.clientMarker.visible = false;
+      this.notice = 'Mission échouée : temps écoulé !';
+      this.noticeTimer = 6;
+    }
+  }
+
+  // --- Mission hélicoptère : livraison de pastis sur une petite île ---
+  // (Re)crée le PNJ client sur une petite île à 400-1000 m de l'hélicoptère
+  spawnClientHeli() {
+    if (this.clientHeli) this.scene.remove(this.clientHeli.group);
+    const h = this.heliVehicle.pos;
+    const m = CONFIG.missionHeli;
+    const spot = findSmallIsland(this.ground, h.x, h.z, m.islandMinDistance, m.islandMaxDistance, m.islandMaxSize)
+      || { x: h.x + m.islandMinDistance, z: h.z };
+    this.clientHeli = new Npc(this.scene, this.ground, this.colliders, null, 780, false);
+    this.clientHeli.group.position.set(spot.x, this.ground.heightAt(spot.x, spot.z), spot.z);
+    this.clientHeli.state = 'wait'; // il attend sa livraison : immobile
+    if (this.buildings && this.buildings.removeRockNear) this.buildings.removeRockNear(spot.x, spot.z, m.clearRadius); // enlève le rocher sur la zone du client
+    if (this.missionHeli) this.missionHeli.done = false;
+    console.log('[MissionHeli] client sur petite île à (' + spot.x.toFixed(0) + ', ' + spot.z.toFixed(0) + ') | '
+      + Math.hypot(spot.x - h.x, spot.z - h.z).toFixed(0) + ' m de l\'hélico');
+  }
+
+  // Déclenchée en prenant l'hélicoptère : amener l'hélico à moins de
+  // missionHeli.deliverDistance (3D) du client en moins de missionHeli.duration s
+  startMissionHeli() {
+    this.missionHeli.active = true;
+    this.missionHeli.done = true; // une seule fois par PNJ client
+    this.missionHeli.timeLeft = CONFIG.missionHeli.duration;
+    this.clientMarkerHeli.visible = true;
+    this.notice = 'MISSION : livre le pastis en hélico au cylindre turquoise sur la petite île ! 1 min !';
+    this.noticeTimer = 5;
+  }
+
+  updateMissionHeli(delta) {
+    if (!this.missionHeli.active) return;
+    this.missionHeli.timeLeft -= delta;
+    const c = this.clientHeli.group.position;
+    // Le cylindre lumineux suit le client
+    this.clientMarkerHeli.position.set(
+      c.x,
+      this.ground.heightAt(c.x, c.z) + CONFIG.missionHeli.markerHeight / 2,
+      c.z
+    );
+    const p = this.heliVehicle.pos;
+    const d = Math.hypot(p.x - c.x, p.y - (c.y + 1), p.z - c.z); // distance 3D hélico <-> client
+    if (d < CONFIG.missionHeli.deliverDistance) {
+      this.missionHeli.active = false;
+      this.clientMarkerHeli.visible = false;
+      this.player.money += CONFIG.missionHeli.reward; // +10 000 $
+      this.notice = 'Livraison réussie ! 🍾 +' + CONFIG.missionHeli.reward + ' $';
+      this.noticeTimer = 6;
+    } else if (this.missionHeli.timeLeft <= 0) {
+      this.missionHeli.active = false;
+      this.clientMarkerHeli.visible = false;
       this.notice = 'Mission échouée : temps écoulé !';
       this.noticeTimer = 6;
     }
@@ -820,6 +891,7 @@ export class Game {
 
       // Mission "Livraison de pastis" : timer + succès si la voiture est assez proche du client
       this.updateMission(delta);
+      this.updateMissionHeli(delta);
       this.playerCamera.update(delta);
     }
     // Les voitures de circulation avancent dans TOUS les modes (même debug F8)
@@ -863,6 +935,7 @@ export class Game {
       if (this.wanted) txt += '   |   ⚠ RECHERCHÉ';
       if (this.heli.state === 'active') txt += '   |   hélico ' + this.heli.hp + '/' + this.heli.maxHp + ' PV';
       if (this.mission.active) txt += '   |   🍾 MISSION pastis : ' + Math.ceil(this.mission.timeLeft) + ' s';
+      if (this.missionHeli && this.missionHeli.active) txt += '   |   🚁 MISSION pastis (île) : ' + Math.ceil(this.missionHeli.timeLeft) + ' s';
       if (this.vehicle) {
         const pan = this.vehicle === this.car && this.car.broken
           ? "   |   PANNE ! (trop longtemps dans l'eau)"

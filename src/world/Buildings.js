@@ -196,6 +196,7 @@ export class Buildings {
   createRocks() {
     const p = CONFIG.props;
     const mat = new THREE.MeshLambertMaterial({ color: p.rockColor, flatShading: true });
+    this.rocks = []; // { x, z, r, mesh } pour pouvoir retirer un rocher (mission île)
     for (const r of osmData.rocks) {
       const y = this.terrain.heightAt(r.x, r.z);
       const mesh = new THREE.Mesh(new THREE.IcosahedronGeometry(r.r, 0), mat);
@@ -203,6 +204,22 @@ export class Buildings {
       mesh.scale.y = 0.6;
       mesh.rotation.y = (r.x * 13.7) % Math.PI;
       this.group.add(mesh);
+      this.rocks.push({ x: r.x, z: r.z, r: r.r, mesh });
     }
+  }
+
+  // Retire le rocher le plus proche de (x, z) s'il chevauche le disque de
+  // rayon `radius` autour du point. Renvoie le rocher retiré ou null.
+  removeRockNear(x, z, radius) {
+    let best = null, bd = radius;
+    for (const rk of this.rocks) {
+      const d = Math.hypot(rk.x - x, rk.z - z) - rk.r; // distance au bord du rocher
+      if (d < bd) { bd = d; best = rk; }
+    }
+    if (best) {
+      this.group.remove(best.mesh);
+      this.rocks = this.rocks.filter((r) => r !== best);
+    }
+    return best;
   }
 }

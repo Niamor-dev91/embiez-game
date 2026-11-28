@@ -309,3 +309,58 @@ export class Npc {
     }
   }
 }
+
+// Cherche une PETITE île (composante de terre isolée, hors celle de `fromX/fromZ`)
+// dont le centre est entre minDist et maxDist de (fromX, fromZ) et de taille
+// max maxSize. Renvoie { x, z } (centre de l'île) ou null.
+export function findSmallIsland(ground, fromX, fromZ, minDist, maxDist, maxSize) {
+  const STEP = 8, H = ground.size / 2, N = Math.floor((2 * H) / STEP) + 1;
+  const land = new Uint8Array(N * N);
+  for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) {
+    if (ground.heightAt(-H + i * STEP, -H + j * STEP) > 0.5) land[i * N + j] = 1;
+  }
+  const comp = new Int32Array(N * N).fill(-1);
+  const gi = (x) => Math.round((x + H) / STEP);
+  // composante de référence = celle contenant (fromX, fromZ) : on la marque
+  let refId = -1;
+  if (land[gi(fromX) * N + gi(fromZ)]) {
+    refId = 999999;
+    const q = [gi(fromX) * N + gi(fromZ)];
+    comp[q[0]] = refId;
+    while (q.length) {
+      const c = q.pop(); const ci = Math.floor(c / N), cj = c % N;
+      for (const [di, dj] of [[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,-1],[1,-1],[-1,1]]) {
+        const ni = ci + di, nj = cj + dj;
+        if (ni < 0 || nj < 0 || ni >= N || nj >= N) continue;
+        if (land[ni * N + nj] && comp[ni * N + nj] === -1) { comp[ni * N + nj] = refId; q.push(ni * N + nj); }
+      }
+    }
+  }
+  // autres composantes
+  let best = null, bestScore = -1;
+  for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) {
+    if (!land[i * N + j] || comp[i * N + j] !== -1) continue;
+    const id = 1000 + i * N + j;
+    const q = [i * N + j]; comp[q[0]] = id;
+    let n = 0, minI = i, maxI = i, minJ = j, maxJ = j, si = 0, sj = 0;
+    while (q.length) {
+      const c = q.pop(); const ci = Math.floor(c / N), cj = c % N;
+      n++; si += ci; sj += cj;
+      if (ci < minI) minI = ci; if (ci > maxI) maxI = ci;
+      if (cj < minJ) minJ = cj; if (cj > maxJ) maxJ = cj;
+      for (const [di, dj] of [[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,-1],[1,-1],[-1,1]]) {
+        const ni = ci + di, nj = cj + dj;
+        if (ni < 0 || nj < 0 || ni >= N || nj >= N) continue;
+        if (land[ni * N + nj] && comp[ni * N + nj] === -1) { comp[ni * N + nj] = id; q.push(ni * N + nj); }
+      }
+    }
+    const cx = -H + (si / n) * STEP, cz = -H + (sj / n) * STEP;
+    const w = (maxI - minI) * STEP, d = (maxJ - minJ) * STEP;
+    const dist = Math.hypot(cx - fromX, cz - fromZ);
+    if (dist < minDist || dist > maxDist) continue;
+    if (Math.max(w, d) > maxSize) continue;
+    const score = Math.min(w, d) * 1000 + dist; // préférer les vraies îles (grosses)
+    if (score > bestScore) { bestScore = score; best = { x: cx, z: cz }; }
+  }
+  return best;
+}

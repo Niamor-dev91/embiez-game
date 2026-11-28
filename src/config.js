@@ -249,6 +249,19 @@ export const CONFIG = {
     clientMinDistance: 200, // le client est placé entre 200 et 500 m du spawn...
     clientMaxDistance: 500, // ...sur la même masse terrestre (pas d'eau entre les deux)
   },
+  missionHeli: {
+    duration: 60,          // 1 minute pour livrer le pastis en hélicoptère
+    reward: 10000,         // $ gagnés si la mission est réussie (player.money)
+    deliverDistance: 12,   // distance 3D max hélico <-> client (m)
+    islandMinDistance: 400, // le PNJ client attend sur une petite île entre 400 et 1000 m de l'hélico
+    islandMaxDistance: 1000,
+    islandMaxSize: 120,    // "petite" île : largeur max (m)
+    clearRadius: 6,        // rayon autour du client île où on enlève un rocher (m)
+    markerColor: 0x40e0d0, // cylindre TURQUOISE (différent du doré de la mission voiture)
+    markerRadius: 12,
+    markerHeight: 12,
+    markerOpacity: 0.3,
+  },
 
   // --- Boutique du port (grande maison avec porte + PNJ vendeur) ---
   shop: {
